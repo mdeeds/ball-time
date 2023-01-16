@@ -1,0 +1,24 @@
+{
+  "name": "ball-time",
+  "version": "1.0.0",
+  "description": "You are a dog.",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/mdeeds/ball-time.git"
+  },
+  "author": "",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/mdeeds/ball-time/issues"
+  },
+  "homepage": "https://github.com/mdeeds/ball-time#readme",
+  "dependencies": {
+    "ammojs-typed": "^1.0.6",
+    "html-webpack-plugin": "^5.5.0",
+    "three": "^0.148.0"
+  }
+}

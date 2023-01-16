@@ -1,5 +1,21 @@
 import * as THREE from "three";
+import Ammo from "ammojs-typed";
 
 const v = new THREE.Vector3(1, 2, 3);
 
 console.log(JSON.stringify(v));
+
+const make = async function (): Promise<typeof Ammo> {
+  return new Promise<typeof Ammo>((resolve) => {
+    Ammo().then((lib) => {
+      resolve(lib);
+    });
+  })
+}
+
+const go = async function () {
+  const ammo = await make();
+  console.log(ammo);
+}
+
+go();

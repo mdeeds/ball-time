@@ -21,6 +21,9 @@ module.exports = {
   ],
   devtool: "source-map",
   externals: {
-    'three': 'THREE'
+    'three': 'THREE',
+    'fs': "commonjs fs",
+    'path': "commonjs path",
+    'ammojs-typed': 'Ammo',
   }
 }
