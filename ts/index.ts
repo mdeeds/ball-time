@@ -1,5 +1,6 @@
 import * as THREE from "three";
 import Ammo from "ammojs-typed";
+import { Game } from "./game";
 
 const v = new THREE.Vector3(1, 2, 3);
 
@@ -15,7 +16,7 @@ const make = async function (): Promise<typeof Ammo> {
 
 const go = async function () {
   const ammo = await make();
-  console.log(ammo);
+  const game = new Game(ammo);
 }
 
 go();
