@@ -26,6 +26,7 @@ export class Game {
     this.setUpPhysics();
     this.setUpCamera();
     this.setUpSky();
+    this.setUpFloor();
     this.setUpRenderer();
   }
 
@@ -48,7 +49,7 @@ export class Game {
       75, window.innerWidth / window.innerHeight, /*near=*/0.1,
       /*far=*/20000);
     this.camera.position.set(0, 1.7, 0);
-    this.camera.lookAt(0, 0, 0);
+    this.camera.lookAt(0, 0, -100);
     this.player.add(this.camera);
     this.scene.add(this.player);
     this.scene.add(this.universe);
@@ -60,8 +61,16 @@ export class Game {
       new THREE.SphereGeometry(10000, 16, 8),
       new MeshBasicMaterial({ map: texture, side: THREE.DoubleSide })
     );
-    sky.geometry.rotateX(-Math.PI / 2);
     this.scene.add(sky);
+  }
+
+  private setUpFloor() {
+    const floor = new THREE.Mesh(
+      new THREE.PlaneGeometry(100, 100, 1000, 1000),
+      new THREE.MeshBasicMaterial({ color: 'blue' })
+    );
+    floor.geometry.rotateX(-Math.PI / 2);
+    this.universe.add(floor);
   }
 
   private setUpRenderer() {
