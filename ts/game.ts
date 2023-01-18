@@ -2,6 +2,7 @@ import * as THREE from "three";
 import Ammo from "ammojs-typed";
 import { VRButton } from 'three/examples/jsm/webxr/VRButton.js';
 import { MeshBasicMaterial } from "three";
+import { Floor } from "./floor";
 
 export class Game {
 
@@ -49,7 +50,7 @@ export class Game {
       75, window.innerWidth / window.innerHeight, /*near=*/0.1,
       /*far=*/20000);
     this.camera.position.set(0, 1.7, 0);
-    this.camera.lookAt(0, 0, -100);
+    this.camera.lookAt(0, 1.7, -100);
     this.player.add(this.camera);
     this.scene.add(this.player);
     this.scene.add(this.universe);
@@ -64,13 +65,9 @@ export class Game {
     this.scene.add(sky);
   }
 
+
   private setUpFloor() {
-    const floor = new THREE.Mesh(
-      new THREE.PlaneGeometry(100, 100, 1000, 1000),
-      new THREE.MeshBasicMaterial({ color: 'blue' })
-    );
-    floor.geometry.rotateX(-Math.PI / 2);
-    this.universe.add(floor);
+    this.universe.add(new Floor());
   }
 
   private setUpRenderer() {
