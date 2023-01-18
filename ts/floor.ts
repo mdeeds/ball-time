@@ -4,7 +4,7 @@ import * as BufferGeometryUtils from "three/examples/jsm/utils/BufferGeometryUti
 export class Floor extends THREE.Mesh {
   constructor() {
     super(
-      new THREE.PlaneGeometry(100, 100, 1000, 1000),
+      new THREE.PlaneGeometry(10, 10, 100, 100),
       Floor.makeShader()
     );
     this.geometry.rotateX(-Math.PI / 2);
@@ -36,9 +36,9 @@ export class Floor extends THREE.Mesh {
     let z = 0.0;
     let m = 1.0;
     let o = 1.0;
-    for (let i = 0; i < 6; ++i) {
+    for (let i = 0; i < 7; ++i) {
       z = z + m * this.mmm((x + 112) * o, (y + 112) * o);
-      m *= 0.6;
+      m *= 0.4;
       o *= 1.9;
     }
     return z * 0.5;
@@ -50,16 +50,25 @@ export class Floor extends THREE.Mesh {
       {
         vertexShader: `
 varying vec3 vNormal;
+varying float viewDot;
 void main() {
+  vec4 worldPosition = modelMatrix * vec4(position, 1.0);
   gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
   vNormal = normalMatrix * normal;
+  vec3 toCamera = cameraPosition - worldPosition.xyz;
+  toCamera /= length(toCamera);
+  viewDot = dot(normal, toCamera);
 }
         `,
         fragmentShader: `
 varying vec3 vNormal;
+varying float viewDot;
 void main() {
-  float intensity = (clamp(vNormal.y, 0.0, 1.0));
-  gl_FragColor = vec4(intensity, intensity, intensity, 1.0);
+  float intensity = pow((clamp(vNormal.y, 0.0, 1.0)), 3.0);
+  float directness = 0.5 + 0.5 * smoothstep(0.05, 0.15, viewDot);
+  intensity *= directness;
+  vec3 c = vec3(0.4, 1.0, 0.5);
+  gl_FragColor = vec4(intensity * c, 1.0);
 }  
         `
       }
