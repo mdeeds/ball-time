@@ -6,6 +6,7 @@ import { Floor } from "./floor";
 import { MeshMaker } from "./meshMaker";
 import { UnionControls } from "./unionControls";
 import { KeyControls } from "./keyControls";
+import { Ball } from "./ball";
 
 export class Game {
 
@@ -33,6 +34,7 @@ export class Game {
     this.setUpCamera();
     this.setUpSky();
     this.setUpFloor();
+    this.setUpBall();
     this.setUpRenderer();
   }
 
@@ -80,6 +82,12 @@ export class Game {
     const floorBtBody = MeshMaker.makeStaticBody(floor, this.ammo);
     this.physicsWorld.addRigidBody(floorBtBody);
     this.rayCast();
+  }
+
+  private setUpBall() {
+    const ball = new Ball();
+    this.universe.add(ball);
+    ball.position.set(0, 3, -3);
   }
 
   private v = new THREE.Vector3();
