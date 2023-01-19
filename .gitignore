@@ -1,4 +1,4 @@
-dist/*.js.map
-src/*.js
-src/*.js.map
+dist/**/*.js.map
+src/**/*.js
+src/**/*.js.map
 node_modules/**
