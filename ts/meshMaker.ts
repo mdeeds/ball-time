@@ -77,14 +77,14 @@ export class MeshMaker {
     const shape =
       new ammo.btBvhTriangleMeshShape(btMesh, true, true);
     shape.setMargin(0.01);
-    const body = MeshMaker.makeBody(object, ammo, shape);
+    const body = MeshMaker.makeBody(object, ammo, shape, /*mass=*/0);
     return body;
   }
 
-  private static makeBody(
+  public static makeBody(
     object: THREE.Object3D, ammo: typeof Ammo,
     shape: Ammo.btSphereShape | Ammo.btBvhTriangleMeshShape | Ammo.btBoxShape,
-  ): Ammo.btRigidBody {
+    mass: number): Ammo.btRigidBody {
 
     const btTx = new ammo.btTransform();
     const btQ = new ammo.btQuaternion(0, 0, 0, 0);
@@ -107,7 +107,7 @@ export class MeshMaker {
     // shape.calculateLocalInertia(mass, btV1);
     const body = new ammo.btRigidBody(
       new ammo.btRigidBodyConstructionInfo(
-        /*mass=*/0, motionState, shape, btV1));
+        mass, motionState, shape, btV1));
     body.setActivationState(4);  // Disable deactivation
     body.activate(true);
     body.setFriction(0.3);

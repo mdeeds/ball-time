@@ -54,7 +54,7 @@ export class Game {
 
   private setUpCamera() {
     this.camera = new THREE.PerspectiveCamera(
-      75, window.innerWidth / window.innerHeight, /*near=*/0.1,
+      75, /*aspect=*/1.0, /*near=*/0.1,
       /*far=*/20000);
     this.camera.position.set(0, 1.7, 0);
     this.camera.lookAt(0, 1.7, -100);
@@ -85,7 +85,7 @@ export class Game {
   }
 
   private setUpBall() {
-    const ball = new Ball();
+    const ball = new Ball(this.ammo, this.physicsWorld);
     this.universe.add(ball);
     ball.position.set(0, 3, -3);
   }
@@ -128,6 +128,7 @@ export class Game {
     const tmp = new THREE.Vector3();
     this.renderer.setAnimationLoop(() => {
       const deltaS = Math.min(clock.getDelta(), 0.1);
+      this.physicsWorld.stepSimulation(deltaS, 10);
       elapsedS += deltaS;
       ++frameCount;
       this.renderer.render(this.scene, this.camera);
