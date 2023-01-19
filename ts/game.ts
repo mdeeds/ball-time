@@ -4,6 +4,8 @@ import { VRButton } from 'three/examples/jsm/webxr/VRButton.js';
 import { MeshBasicMaterial } from "three";
 import { Floor } from "./floor";
 import { MeshMaker } from "./meshMaker";
+import { UnionControls } from "./unionControls";
+import { KeyControls } from "./keyControles";
 
 export class Game {
 
@@ -19,6 +21,7 @@ export class Game {
   private scene = new THREE.Scene();
   private universe = new THREE.Group();
   private player = new THREE.Group();
+  private controls = new UnionControls();
 
   private physicsWorld: Ammo.btDiscreteDynamicsWorld;
 
@@ -55,6 +58,8 @@ export class Game {
     this.player.add(this.camera);
     this.scene.add(this.player);
     this.scene.add(this.universe);
+
+    this.controls.add(new KeyControls());
   }
 
   private setUpSky() {
@@ -108,11 +113,15 @@ export class Game {
     let elapsedS = 0;
     let frameCount = 0;
 
+    const delta = new THREE.Vector3();
     this.renderer.setAnimationLoop(() => {
       const deltaS = Math.min(clock.getDelta(), 0.1);
       elapsedS += deltaS;
       ++frameCount;
       this.renderer.render(this.scene, this.camera);
+      this.controls.getDelta(delta);
+      this.player.position.add(delta);
+      this.rayCast();
     });
   }
 }
