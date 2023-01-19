@@ -4,7 +4,7 @@ import * as BufferGeometryUtils from "three/examples/jsm/utils/BufferGeometryUti
 export class Floor extends THREE.Mesh {
   constructor() {
     super(
-      new THREE.PlaneGeometry(10, 10, 100, 100),
+      new THREE.PlaneGeometry(100, 100, 300, 300),
       Floor.makeShader()
     );
     this.geometry.rotateX(-Math.PI / 2);

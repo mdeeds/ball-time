@@ -5,7 +5,7 @@ import { MeshBasicMaterial } from "three";
 import { Floor } from "./floor";
 import { MeshMaker } from "./meshMaker";
 import { UnionControls } from "./unionControls";
-import { KeyControls } from "./keyControles";
+import { KeyControls } from "./keyControls";
 
 export class Game {
 
@@ -20,6 +20,7 @@ export class Game {
   private camera: THREE.Camera;
   private scene = new THREE.Scene();
   private universe = new THREE.Group();
+  private tail = new THREE.Vector3();
   private player = new THREE.Group();
   private controls = new UnionControls();
 
@@ -58,6 +59,8 @@ export class Game {
     this.player.add(this.camera);
     this.scene.add(this.player);
     this.scene.add(this.universe);
+
+    this.tail.set(0, 0, 1.0);
 
     this.controls.add(new KeyControls());
   }
@@ -114,14 +117,31 @@ export class Game {
     let frameCount = 0;
 
     const delta = new THREE.Vector3();
+    const tmp = new THREE.Vector3();
     this.renderer.setAnimationLoop(() => {
       const deltaS = Math.min(clock.getDelta(), 0.1);
       elapsedS += deltaS;
       ++frameCount;
       this.renderer.render(this.scene, this.camera);
       this.controls.getDelta(delta);
+      // if (delta.length() > 0) {
+      delta.applyQuaternion(this.player.quaternion);
       this.player.position.add(delta);
+
+      // Calculate the new position of the tail
+      this.tail.y = this.player.position.y;
+      tmp.copy(this.player.position);
+      tmp.sub(this.tail);
+      tmp.setLength(tmp.length() - 1.0);
+      this.tail.add(tmp);
+
+      // "LookAt" a position in front of the player opposite the tail.
+      tmp.copy(this.player.position);
+      tmp.sub(this.tail);
+      tmp.add(this.player.position);
+      this.player.lookAt(tmp);
       this.rayCast();
+      // } // if (delta.length() > 0)
     });
   }
 }
