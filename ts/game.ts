@@ -3,6 +3,7 @@ import Ammo from "ammojs-typed";
 import { VRButton } from 'three/examples/jsm/webxr/VRButton.js';
 import { MeshBasicMaterial } from "three";
 import { Floor } from "./floor";
+import { MeshMaker } from "./meshMaker";
 
 export class Game {
 
@@ -65,9 +66,34 @@ export class Game {
     this.scene.add(sky);
   }
 
-
   private setUpFloor() {
-    this.universe.add(new Floor());
+    const floor = new Floor();
+    this.universe.add(floor);
+    const floorBtBody = MeshMaker.makeStaticBody(floor, this.ammo);
+    this.physicsWorld.addRigidBody(floorBtBody);
+    this.rayCast();
+  }
+
+  private v = new THREE.Vector3();
+  private rayCast() {
+    this.camera.getWorldPosition(this.v);
+    const start = new this.ammo.btVector3(this.v.x, this.v.y, this.v.z);
+    const end = new this.ammo.btVector3(this.v.x, -10, this.v.z);
+
+    const callback = new this.ammo.ClosestRayResultCallback(start, end);
+    //RayCallback.m_collisionFilterMask = FILTER_CAMERA;
+    this.physicsWorld.rayTest(start, end, callback);
+    if (callback.hasHit()) {
+      const intersection = callback.get_m_hitPointWorld();
+      this.player.position.set(intersection.x(), intersection.y() - 1.0, intersection.z());
+      // const normal = callback.get_m_hitNormalWorld();
+      // intersection.op_sub(start);
+      // console.log(`Distance to ground: ${intersection.length()}`);
+      // console.log(`Normal: ${[normal.x(), normal.y(), normal.z()]}`);
+    }
+    else {
+      // console.log('miss!');
+    }
   }
 
   private setUpRenderer() {
