@@ -41,6 +41,7 @@ export class MeshMaker {
         ++numInward;
       }
     }
+    console.log(`inward: ${numInward}; outward: ${numOutward}`);
   }
 
   private static addToShapeFromObject(object: THREE.Object3D,
@@ -76,7 +77,7 @@ export class MeshMaker {
     // const volume = Assets.getVolumeOfObject(object);
     const shape =
       new ammo.btBvhTriangleMeshShape(btMesh, true, true);
-    shape.setMargin(0.01);
+    shape.setMargin(0.05);
     const body = MeshMaker.makeBody(object, ammo, shape, /*mass=*/0);
     return body;
   }
@@ -112,7 +113,9 @@ export class MeshMaker {
     body.activate(true);
     body.setFriction(0.3);
     body.setRestitution(0.1);
-
+    if (mass == 0) {
+      body.setCollisionFlags(body.getCollisionFlags() | 1);
+    }
     return body;
   }
 }

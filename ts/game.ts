@@ -7,6 +7,7 @@ import { MeshMaker } from "./meshMaker";
 import { UnionControls } from "./unionControls";
 import { KeyControls } from "./keyControls";
 import { Ball } from "./ball";
+import { GripControls } from "./gripControls";
 
 export class Game {
 
@@ -24,6 +25,7 @@ export class Game {
   private tail = new THREE.Vector3();
   private player = new THREE.Group();
   private controls = new UnionControls();
+  private ball: Ball;
 
   private physicsWorld: Ammo.btDiscreteDynamicsWorld;
 
@@ -36,6 +38,7 @@ export class Game {
     this.setUpFloor();
     this.setUpBall();
     this.setUpRenderer();
+    this.setUpControls();
   }
 
   private setUpPhysics() {
@@ -63,8 +66,6 @@ export class Game {
     this.scene.add(this.universe);
 
     this.tail.set(0, 0, 1.0);
-
-    this.controls.add(new KeyControls());
   }
 
   private setUpSky() {
@@ -85,9 +86,11 @@ export class Game {
   }
 
   private setUpBall() {
-    const ball = new Ball(this.ammo, this.physicsWorld);
-    this.universe.add(ball);
-    ball.position.set(0, 3, -3);
+    this.ball = new Ball(this.ammo, this.physicsWorld);
+    this.universe.add(this.ball);
+    this.ball.position.set(0, 3, -3);
+    this.ball.updateMatrixWorld(true);
+    this.ball.release(this.universe);
   }
 
   private v = new THREE.Vector3();
@@ -128,7 +131,10 @@ export class Game {
     const tmp = new THREE.Vector3();
     this.renderer.setAnimationLoop(() => {
       const deltaS = Math.min(clock.getDelta(), 0.1);
-      this.physicsWorld.stepSimulation(deltaS, 10);
+      if (deltaS > 0) {
+        this.physicsWorld.stepSimulation(deltaS, 10);
+      }
+      this.ball.update();
       elapsedS += deltaS;
       ++frameCount;
       this.renderer.render(this.scene, this.camera);
@@ -152,5 +158,13 @@ export class Game {
       this.rayCast();
       // } // if (delta.length() > 0)
     });
+  }
+
+  setUpControls() {
+    this.controls.add(new KeyControls());
+    const p = GripControls.make(this.renderer.xr);
+    p.then((gripControls: GripControls) => {
+      this.controls.add(gripControls);
+    })
   }
 }
