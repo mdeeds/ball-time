@@ -5,6 +5,7 @@ import { RewardSound } from "./sfx/rewardSound";
 export class GripControls implements ControlInterface {
   private last0 = new THREE.Vector3();
   private last1 = new THREE.Vector3();
+  private arrow: THREE.ArrowHelper;
   private constructor(session: XRSession,
     private g0: THREE.XRGripSpace, private g1: THREE.XRGripSpace,
     playerGroup: THREE.Group) {
@@ -14,6 +15,10 @@ export class GripControls implements ControlInterface {
     playerGroup.add(g1);
     g0.add(new THREE.AxesHelper(0.3));
     g1.add(new THREE.AxesHelper(0.3));
+    this.arrow = new THREE.ArrowHelper(
+      new THREE.Vector3(0, 0, -1), new THREE.Vector3(0, 0, 0),
+      /*length=*/0.5);
+    this.g0.add(this.arrow);
   }
 
   private static gripResolver(resolve: (g: GripControls) => void,
@@ -40,16 +45,23 @@ export class GripControls implements ControlInterface {
 
   private t0 = new THREE.Vector3();
   private t1 = new THREE.Vector3();
+  private t2 = new THREE.Vector3();
   public getDelta(out: THREE.Vector3): void {
     this.t0.copy(this.g0.position);
     this.t1.copy(this.g1.position);
     if (this.t0.y < this.t1.y) {
       out.copy(this.t0);
       out.sub(this.last0);
+      this.g0.add(this.arrow);
     } else {
       out.copy(this.t1);
       out.sub(this.last1);
+      this.g1.add(this.arrow);
     }
+    this.t2.copy(out);
+    this.t2.normalize();
+    this.arrow.setDirection(this.t2);
+
     this.last0.copy(this.t0);
     this.last1.copy(this.t1);
   }

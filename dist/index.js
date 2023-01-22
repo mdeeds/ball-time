@@ -362,6 +362,7 @@ class Game {
             ++frameCount;
             this.renderer.render(this.scene, this.camera);
             this.controls.getDelta(delta);
+            delta.y = 0;
             // if (delta.length() > 0) {
             delta.applyQuaternion(this.player.quaternion);
             this.player.position.add(delta);
@@ -429,6 +430,7 @@ class GripControls {
     g1;
     last0 = new THREE.Vector3();
     last1 = new THREE.Vector3();
+    arrow;
     constructor(session, g0, g1, playerGroup) {
         this.g0 = g0;
         this.g1 = g1;
@@ -438,6 +440,9 @@ class GripControls {
         playerGroup.add(g1);
         g0.add(new THREE.AxesHelper(0.3));
         g1.add(new THREE.AxesHelper(0.3));
+        this.arrow = new THREE.ArrowHelper(new THREE.Vector3(0, 0, -1), new THREE.Vector3(0, 0, 0), 
+        /*length=*/ 0.5);
+        this.g0.add(this.arrow);
     }
     static gripResolver(resolve, xr, playerGroup) {
         const session = xr.getSession();
@@ -461,17 +466,23 @@ class GripControls {
     }
     t0 = new THREE.Vector3();
     t1 = new THREE.Vector3();
+    t2 = new THREE.Vector3();
     getDelta(out) {
         this.t0.copy(this.g0.position);
         this.t1.copy(this.g1.position);
         if (this.t0.y < this.t1.y) {
             out.copy(this.t0);
             out.sub(this.last0);
+            this.g0.add(this.arrow);
         }
         else {
             out.copy(this.t1);
             out.sub(this.last1);
+            this.g1.add(this.arrow);
         }
+        this.t2.copy(out);
+        this.t2.normalize();
+        this.arrow.setDirection(this.t2);
         this.last0.copy(this.t0);
         this.last1.copy(this.t1);
     }
@@ -679,24 +690,34 @@ class RewardSound {
     context;
     oscillator1;
     oscillator2;
+    lfo;
     filter;
     gain;
+    detunAmt;
     constructor() {
         this.context = new AudioContext();
         this.oscillator1 = this.context.createOscillator();
         this.oscillator2 = this.context.createOscillator();
+        this.lfo = this.context.createOscillator();
         this.filter = this.context.createBiquadFilter();
         this.gain = this.context.createGain();
+        this.detunAmt = this.context.createGain();
+        this.detunAmt.gain.value = 50;
     }
     start() {
         // Set the first oscillator to a sine wave and the second oscillator to a triangle wave
         this.oscillator1.type = 'sine';
         this.oscillator2.type = 'triangle';
         this.gain.gain.value = 0.3;
+        this.lfo.type = 'sine';
         // Set the frequency of the oscillators to different values
         this.oscillator1.frequency.value = 880;
         this.oscillator2.frequency.value =
             this.oscillator1.frequency.value * 5 / 2;
+        this.lfo.frequency.value = 7;
+        this.lfo.connect(this.detunAmt);
+        this.detunAmt.connect(this.oscillator1.detune);
+        this.detunAmt.connect(this.oscillator2.detune);
         // Start the oscillators
         this.oscillator1.start();
         this.oscillator2.start();
@@ -710,7 +731,7 @@ class RewardSound {
         this.filter.connect(this.gain);
         this.gain.connect(this.context.destination);
         // Set a sweep time of 2 seconds for the filter's cutoff frequency
-        this.filter.frequency.setTargetAtTime(40, this.context.currentTime, 0.7);
+        this.filter.frequency.setTargetAtTime(10, this.context.currentTime, 0.7);
         // Stop the sound after 2.5 seconds
         setTimeout(() => this.stop(), 2500);
     }

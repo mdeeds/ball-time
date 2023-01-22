@@ -139,6 +139,7 @@ export class Game {
       ++frameCount;
       this.renderer.render(this.scene, this.camera);
       this.controls.getDelta(delta);
+      delta.y = 0;
       // if (delta.length() > 0) {
       delta.applyQuaternion(this.player.quaternion);
       this.player.position.add(delta);
