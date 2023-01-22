@@ -105,7 +105,7 @@ export class MeshMaker {
     btTx.setRotation(btQ);
     const motionState = new ammo.btDefaultMotionState(btTx);
     btV1.setValue(0, 0, 0);
-    // shape.calculateLocalInertia(mass, btV1);
+    shape.calculateLocalInertia(mass, btV1);
     const body = new ammo.btRigidBody(
       new ammo.btRigidBodyConstructionInfo(
         mass, motionState, shape, btV1));

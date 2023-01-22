@@ -162,7 +162,7 @@ export class Game {
 
   setUpControls() {
     this.controls.add(new KeyControls());
-    const p = GripControls.make(this.renderer.xr);
+    const p = GripControls.make(this.renderer.xr, this.player);
     p.then((gripControls: GripControls) => {
       this.controls.add(gripControls);
     })

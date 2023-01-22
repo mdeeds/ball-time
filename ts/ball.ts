@@ -17,8 +17,9 @@ export class Ball extends THREE.Object3D {
 
     const shape = new ammo.btSphereShape(0.1);
     shape.setMargin(0.05);
-    sphere.position.y = 3;
-    this.btBody = MeshMaker.makeBody(sphere, ammo, shape, 0.5);
+    this.position.y = 1.0;
+    this.btBody = MeshMaker.makeBody(this, ammo, shape, 0.5);
+    this.add(new THREE.AxesHelper(0.5));
   }
 
   private moveToTarget(
@@ -40,6 +41,7 @@ export class Ball extends THREE.Object3D {
 
     iso.multiply(targetMatrix);
     iso.decompose(this.position, this.quaternion, this.scale);
+    this.matrix.compose(this.position, this.quaternion, this.scale);
     if (target != this.parent) {
       target.add(this);
     }
@@ -52,10 +54,13 @@ export class Ball extends THREE.Object3D {
     const position = transform.getOrigin();
     const quaternion = transform.getRotation();
     // Convert the position and quaternion to THREE.js vectors
-    const threePosition = new THREE.Vector3(position.x(), position.y(), position.z());
-    const threeQuaternion = new THREE.Quaternion(quaternion.x(), quaternion.y(), quaternion.z(), quaternion.w());
 
-    this.moveToTarget(null, this.parent, threePosition, threeQuaternion);
+    this.position.set(position.x(), position.y(), position.z());
+    this.quaternion.set(quaternion.x(), quaternion.y(), quaternion.z(), quaternion.w());
+
+    // const threePosition = new THREE.Vector3(position.x(), position.y(), position.z());
+    // const threeQuaternion = new THREE.Quaternion(quaternion.x(), quaternion.y(), quaternion.z(), quaternion.w());
+    // this.moveToTarget(null, this.parent, threePosition, threeQuaternion);
   }
 
   release(into: THREE.Object3D) {

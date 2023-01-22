@@ -46,8 +46,9 @@ class Ball extends THREE.Object3D {
         this.add(sphere);
         const shape = new ammo.btSphereShape(0.1);
         shape.setMargin(0.05);
-        sphere.position.y = 3;
-        this.btBody = meshMaker_1.MeshMaker.makeBody(sphere, ammo, shape, 0.5);
+        this.position.y = 1.0;
+        this.btBody = meshMaker_1.MeshMaker.makeBody(this, ammo, shape, 0.5);
+        this.add(new THREE.AxesHelper(0.5));
     }
     moveToTarget(source, target, threePosition, threeQuaternion) {
         const iso = new THREE.Matrix4();
@@ -63,6 +64,7 @@ class Ball extends THREE.Object3D {
         targetMatrix.invert();
         iso.multiply(targetMatrix);
         iso.decompose(this.position, this.quaternion, this.scale);
+        this.matrix.compose(this.position, this.quaternion, this.scale);
         if (target != this.parent) {
             target.add(this);
         }
@@ -76,9 +78,11 @@ class Ball extends THREE.Object3D {
         const position = transform.getOrigin();
         const quaternion = transform.getRotation();
         // Convert the position and quaternion to THREE.js vectors
-        const threePosition = new THREE.Vector3(position.x(), position.y(), position.z());
-        const threeQuaternion = new THREE.Quaternion(quaternion.x(), quaternion.y(), quaternion.z(), quaternion.w());
-        this.moveToTarget(null, this.parent, threePosition, threeQuaternion);
+        this.position.set(position.x(), position.y(), position.z());
+        this.quaternion.set(quaternion.x(), quaternion.y(), quaternion.z(), quaternion.w());
+        // const threePosition = new THREE.Vector3(position.x(), position.y(), position.z());
+        // const threeQuaternion = new THREE.Quaternion(quaternion.x(), quaternion.y(), quaternion.z(), quaternion.w());
+        // this.moveToTarget(null, this.parent, threePosition, threeQuaternion);
     }
     release(into) {
         this.isFlying = true;
@@ -378,7 +382,7 @@ class Game {
     }
     setUpControls() {
         this.controls.add(new keyControls_1.KeyControls());
-        const p = gripControls_1.GripControls.make(this.renderer.xr);
+        const p = gripControls_1.GripControls.make(this.renderer.xr, this.player);
         p.then((gripControls) => {
             this.controls.add(gripControls);
         });
@@ -425,30 +429,34 @@ class GripControls {
     g1;
     last0 = new THREE.Vector3();
     last1 = new THREE.Vector3();
-    constructor(session, g0, g1) {
+    constructor(session, g0, g1, playerGroup) {
         this.g0 = g0;
         this.g1 = g1;
         this.last0.copy(g0.position);
         this.last1.copy(g1.position);
+        playerGroup.add(g0);
+        playerGroup.add(g1);
+        g0.add(new THREE.AxesHelper(0.3));
+        g1.add(new THREE.AxesHelper(0.3));
     }
-    static gripResolver(resolve, xr) {
+    static gripResolver(resolve, xr, playerGroup) {
         const session = xr.getSession();
         const g0 = xr.getControllerGrip(0);
         const g1 = xr.getControllerGrip(1);
         if (session && g0 && g1) {
             const s = new rewardSound_1.RewardSound();
             s.start();
-            resolve(new GripControls(session, g0, g1));
+            resolve(new GripControls(session, g0, g1, playerGroup));
         }
         else {
             setTimeout(() => {
-                GripControls.gripResolver(resolve, xr);
+                GripControls.gripResolver(resolve, xr, playerGroup);
             }, 500);
         }
     }
-    static async make(xr) {
+    static async make(xr, playerGroup) {
         return new Promise((resolve, reject) => {
-            GripControls.gripResolver(resolve, xr);
+            GripControls.gripResolver(resolve, xr, playerGroup);
         });
     }
     getDelta(out) {
@@ -640,7 +648,7 @@ class MeshMaker {
         btTx.setRotation(btQ);
         const motionState = new ammo.btDefaultMotionState(btTx);
         btV1.setValue(0, 0, 0);
-        // shape.calculateLocalInertia(mass, btV1);
+        shape.calculateLocalInertia(mass, btV1);
         const body = new ammo.btRigidBody(new ammo.btRigidBodyConstructionInfo(mass, motionState, shape, btV1));
         body.setActivationState(4); // Disable deactivation
         body.activate(true);
