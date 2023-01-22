@@ -67,7 +67,7 @@ void main() {
   float intensity = pow((clamp(vNormal.y, 0.0, 1.0)), 3.0);
   float directness = 0.5 + 0.5 * smoothstep(0.05, 0.15, viewDot);
   intensity *= directness;
-  vec3 c = vec3(0.4, 1.0, 0.5);
+  vec3 c = vec3(34.0/255.0, 139.0/255.0, 34.0/255.0);
   gl_FragColor = vec4(intensity * c, 1.0);
 }  
         `
