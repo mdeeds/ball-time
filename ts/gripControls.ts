@@ -19,8 +19,8 @@ export class GripControls implements ControlInterface {
   private static gripResolver(resolve: (g: GripControls) => void,
     xr: THREE.WebXRManager, playerGroup: THREE.Group) {
     const session = xr.getSession();
-    const g0 = xr.getControllerGrip(0);
-    const g1 = xr.getControllerGrip(1);
+    const g0 = xr.getController(0);
+    const g1 = xr.getController(1);
     if (session && g0 && g1) {
       const s = new RewardSound();
       s.start();
@@ -38,15 +38,19 @@ export class GripControls implements ControlInterface {
     });
   }
 
+  private t0 = new THREE.Vector3();
+  private t1 = new THREE.Vector3();
   public getDelta(out: THREE.Vector3): void {
-    if (this.g0.position.y < this.g1.position.y) {
-      out.copy(this.g0.position);
+    this.g0.getWorldPosition(this.t0);
+    this.g1.getWorldPosition(this.t1);
+    if (this.t0.y < this.t1.y) {
+      out.copy(this.t0);
       out.sub(this.last0);
     } else {
-      out.copy(this.g1.position);
+      out.copy(this.t1);
       out.sub(this.last1);
     }
-    this.last0.copy(this.g0.position);
-    this.last1.copy(this.g1.position);
+    this.last0.copy(this.t0);
+    this.last1.copy(this.t1);
   }
 }
