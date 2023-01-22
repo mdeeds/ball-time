@@ -41,8 +41,8 @@ export class GripControls implements ControlInterface {
   private t0 = new THREE.Vector3();
   private t1 = new THREE.Vector3();
   public getDelta(out: THREE.Vector3): void {
-    this.g0.getWorldPosition(this.t0);
-    this.g1.getWorldPosition(this.t1);
+    this.t0.copy(this.g0.position);
+    this.t1.copy(this.g1.position);
     if (this.t0.y < this.t1.y) {
       out.copy(this.t0);
       out.sub(this.last0);
