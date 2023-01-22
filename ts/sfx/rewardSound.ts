@@ -50,7 +50,7 @@ export class RewardSound {
     this.gain.connect(this.context.destination);
 
     // Set a sweep time of 2 seconds for the filter's cutoff frequency
-    this.filter.frequency.setTargetAtTime(40, this.context.currentTime, 0.7);
+    this.filter.frequency.setTargetAtTime(10, this.context.currentTime, 0.7);
 
     // Stop the sound after 2.5 seconds
     setTimeout(() => this.stop(), 2500);
