@@ -639,8 +639,8 @@ class GripControls {
             out.sub(this.t1);
             // this.g1.add(this.arrow);
         }
-        out.x *= 3.0;
-        out.z *= 40.0;
+        out.x *= 1.0;
+        out.z *= 5.0;
         this.t2.copy(out);
         this.t2.normalize();
         // this.arrow.setDirection(this.t2);
