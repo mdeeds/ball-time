@@ -203,7 +203,10 @@ void main() {
   float intensity = pow((clamp(vNormal.y, 0.0, 1.0)), 3.0);
   float directness = 0.5 + 0.5 * smoothstep(0.05, 0.15, viewDot);
   intensity *= directness;
-  vec3 c = vec3(34.0/255.0, 139.0/255.0, 34.0/255.0);
+
+  // vec3 c = vec3(34.0/255.0, 139.0/255.0, 34.0/255.0);  // ForestGreen
+  vec3 c = vec3(65.0/255.0, 105.0/255.0, 225.0/255.0);  // RoyalBlue
+
   gl_FragColor = vec4(intensity * c, 1.0);
 }  
         `
@@ -261,15 +264,18 @@ class Game {
     // World (Scene)
     // +-- Player
     // | +-- Camera
+    // + tail
     // +-- Universe
     renderer;
     camera;
     scene = new THREE.Scene();
     universe = new THREE.Group();
-    tail = new THREE.Vector3();
+    tail = new THREE.Mesh(new THREE.IcosahedronGeometry(0.1, 2), new THREE.MeshBasicMaterial({ color: 'brown' }));
+    antiTail = new THREE.Mesh(new THREE.IcosahedronGeometry(0.1, 2), new THREE.MeshBasicMaterial({ color: 'black' }));
     player = new THREE.Group();
     controls = new unionControls_1.UnionControls();
     ball;
+    playerArrow = new THREE.ArrowHelper(new THREE.Vector3(0, 0, -1), new THREE.Vector3(0, 1.3, -1), 1.0);
     physicsWorld;
     constructor(ammo) {
         this.ammo = ammo;
@@ -297,13 +303,17 @@ class Game {
         this.camera.position.set(0, 1.7, 0);
         this.camera.lookAt(0, 1.7, -100);
         this.player.add(this.camera);
+        this.scene.add(this.playerArrow);
         this.scene.add(this.player);
+        this.scene.add(this.tail);
+        this.scene.add(this.antiTail);
         this.scene.add(this.universe);
-        this.tail.set(0, 0, 1.0);
+        this.tail.position.set(0, 0, 1.0);
+        this.antiTail.position.set(0, 0, -1.0);
     }
     setUpSky() {
-        const texture = new THREE.TextureLoader().load('img/pwn-pano.png');
-        const sky = new THREE.Mesh(new THREE.SphereGeometry(10000, 16, 8), new three_1.MeshBasicMaterial({ map: texture, side: THREE.DoubleSide }));
+        const texture = new THREE.TextureLoader().load('img/city-pano.png');
+        const sky = new THREE.Mesh(new THREE.SphereGeometry(10000, 32, 16), new three_1.MeshBasicMaterial({ map: texture, side: THREE.DoubleSide }));
         this.scene.add(sky);
     }
     setUpFloor() {
@@ -330,7 +340,7 @@ class Game {
         this.physicsWorld.rayTest(start, end, callback);
         if (callback.hasHit()) {
             const intersection = callback.get_m_hitPointWorld();
-            this.player.position.set(intersection.x(), intersection.y() - 1.0, intersection.z());
+            this.universe.position.y = -intersection.y() - 1.0;
             // const normal = callback.get_m_hitNormalWorld();
             // intersection.op_sub(start);
             // console.log(`Distance to ground: ${intersection.length()}`);
@@ -340,6 +350,7 @@ class Game {
             // console.log('miss!');
         }
     }
+    t0 = new THREE.Vector3();
     setUpRenderer() {
         this.renderer = new THREE.WebGLRenderer();
         this.renderer.shadowMap.enabled = true;
@@ -363,22 +374,26 @@ class Game {
             this.renderer.render(this.scene, this.camera);
             this.controls.getDelta(delta);
             delta.y = 0;
-            // if (delta.length() > 0) {
-            delta.applyQuaternion(this.player.quaternion);
-            this.player.position.add(delta);
-            // Calculate the new position of the tail
-            this.tail.y = this.player.position.y;
-            tmp.copy(this.player.position);
-            tmp.sub(this.tail);
-            tmp.setLength(tmp.length() - 1.0);
-            this.tail.add(tmp);
-            // "LookAt" a position in front of the player opposite the tail.
-            tmp.copy(this.player.position);
-            tmp.sub(this.tail);
-            tmp.add(this.player.position);
-            this.player.lookAt(tmp);
+            if (delta.length() > 0) {
+                delta.applyQuaternion(this.player.quaternion);
+                this.universe.position.sub(delta);
+                this.t0.copy(delta);
+                this.t0.normalize();
+                this.playerArrow.setDirection(this.t0);
+                // // Calculate the new position of the tail
+                console.log(`Tail: ${[this.tail.position.x, this.tail.position.z]}`);
+                this.tail.position.sub(delta);
+                this.tail.position.setLength(1.0);
+                console.log(`Tail: ${[this.tail.position.x, this.tail.position.z]}`);
+                this.antiTail.position.copy(this.tail.position);
+                this.antiTail.position.multiplyScalar(-1);
+            } // if (delta.length() > 0)
+            // // "LookAt" a position in front of the player opposite the tail.
+            // tmp.copy(this.tail.position);
+            // tmp.multiplyScalar(-1);
+            this.player.lookAt(this.tail.position);
+            // this.antiTail.position.copy(tmp);
             this.rayCast();
-            // } // if (delta.length() > 0)
         });
     }
     setUpControls() {
@@ -483,6 +498,8 @@ class GripControls {
         this.t2.copy(out);
         this.t2.normalize();
         this.arrow.setDirection(this.t2);
+        const len = out.length();
+        this.arrow.setLength(5.0 * len);
         this.last0.copy(this.t0);
         this.last1.copy(this.t1);
     }
@@ -537,10 +554,10 @@ class KeyControls {
         this.lastCallMs += dt;
         out.set(0, 0, 0);
         if (this.keysDown.has('KeyA')) {
-            out.x += 0.003 * dt;
+            out.x -= 0.003 * dt;
         }
         if (this.keysDown.has('KeyD')) {
-            out.x -= 0.003 * dt;
+            out.x += 0.003 * dt;
         }
         if (this.keysDown.has('KeyW')) {
             out.z -= 0.01 * dt;
