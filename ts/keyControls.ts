@@ -16,10 +16,10 @@ export class KeyControls implements ControlInterface {
     this.lastCallMs += dt;
     out.set(0, 0, 0);
     if (this.keysDown.has('KeyA')) {
-      out.x += 0.003 * dt;
+      out.x -= 0.003 * dt;
     }
     if (this.keysDown.has('KeyD')) {
-      out.x -= 0.003 * dt;
+      out.x += 0.003 * dt;
     }
     if (this.keysDown.has('KeyW')) {
       out.z -= 0.01 * dt;

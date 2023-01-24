@@ -61,6 +61,8 @@ export class GripControls implements ControlInterface {
     this.t2.copy(out);
     this.t2.normalize();
     this.arrow.setDirection(this.t2);
+    const len = out.length();
+    this.arrow.setLength(5.0 * len);
 
     this.last0.copy(this.t0);
     this.last1.copy(this.t1);
