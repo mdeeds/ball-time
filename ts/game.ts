@@ -30,6 +30,7 @@ export class Game {
   private player = new THREE.Group();
   private controls = new UnionControls();
   private ball: Ball;
+  private floor: Floor;
 
   private playerArrow = new THREE.ArrowHelper(
     new THREE.Vector3(0, 0, -1), new THREE.Vector3(0, 1.3, -1), 1.0);
@@ -89,9 +90,9 @@ export class Game {
   }
 
   private setUpFloor() {
-    const floor = new Floor();
-    this.universe.add(floor);
-    const floorBtBody = MeshMaker.makeStaticBody(floor, this.ammo);
+    this.floor = new Floor();
+    this.universe.add(this.floor);
+    const floorBtBody = MeshMaker.makeStaticBody(this.floor, this.ammo);
     floorBtBody.setFriction(0.5);
     this.physicsWorld.addRigidBody(floorBtBody);
     this.rayCast();
@@ -150,6 +151,9 @@ export class Game {
         this.physicsWorld.stepSimulation(deltaS, 10);
       }
       this.ball.update();
+      this.ball.getWorldPosition(tmp);
+      this.floor.setBallPosition(tmp);
+
       elapsedS += deltaS;
       ++frameCount;
       this.renderer.render(this.scene, this.camera);

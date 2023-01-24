@@ -2,6 +2,7 @@ import * as THREE from "three";
 
 import Ammo from "ammojs-typed";
 import { MeshMaker } from "./meshMaker";
+import { BallMaterial } from "./ballMaterial";
 
 export class Ball extends THREE.Object3D {
   private isFlying = false;
@@ -11,7 +12,7 @@ export class Ball extends THREE.Object3D {
     super();
     const sphere = new THREE.Mesh(
       new THREE.IcosahedronGeometry(0.1, 4),
-      new THREE.MeshBasicMaterial({ color: 'red' })
+      new BallMaterial()
     );
     this.add(sphere);
 

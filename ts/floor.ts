@@ -1,12 +1,16 @@
 import * as THREE from "three";
 import * as BufferGeometryUtils from "three/examples/jsm/utils/BufferGeometryUtils.js";
+import { FloorMaterial } from "./floorMaterial";
 
 export class Floor extends THREE.Mesh {
+  private floorMaterial: FloorMaterial;
   constructor() {
+    const floorMaterial = new FloorMaterial();
     super(
       new THREE.PlaneGeometry(100, 100, 300, 300),
-      Floor.makeShader()
+      floorMaterial
     );
+    this.floorMaterial = floorMaterial;
     this.geometry.rotateX(-Math.PI / 2);
 
     const vertices = this.geometry.attributes.position;
@@ -20,19 +24,23 @@ export class Floor extends THREE.Mesh {
     this.geometry = BufferGeometryUtils.mergeVertices(this.geometry, 0.01);
   }
 
-  mmm(x: number, y: number): number {
+  setBallPosition(p: THREE.Vector3) {
+    this.floorMaterial.setBallPosition(p);
+  }
+
+
+  private mmm(x: number, y: number): number {
     const a = 0.31;
     const b = 0.71;
     const c = 0.72;
     const d = 0.34;
-
 
     const mag = Math.sin(x + 1.3 * Math.sin(a * x) + 1.5 * Math.sin(b * y))
       * Math.sin(y + 1.3 * Math.sin(c * x) + 1.1 * Math.sin(d * y));
     return mag;
   }
 
-  nnn(x: number, y: number): number {
+  private nnn(x: number, y: number): number {
     let z = 0.0;
     let m = 1.0;
     let o = 1.0;
@@ -42,40 +50,5 @@ export class Floor extends THREE.Mesh {
       o *= 1.9;
     }
     return z * 0.5;
-  }
-
-
-  static makeShader(): THREE.ShaderMaterial {
-    const shader = new THREE.ShaderMaterial(
-      {
-        vertexShader: `
-varying vec3 vNormal;
-varying float viewDot;
-void main() {
-  vec4 worldPosition = modelMatrix * vec4(position, 1.0);
-  gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
-  vNormal = normalMatrix * normal;
-  vec3 toCamera = cameraPosition - worldPosition.xyz;
-  toCamera /= length(toCamera);
-  viewDot = dot(normal, toCamera);
-}
-        `,
-        fragmentShader: `
-varying vec3 vNormal;
-varying float viewDot;
-void main() {
-  float intensity = pow((clamp(vNormal.y, 0.0, 1.0)), 3.0);
-  float directness = 0.5 + 0.5 * smoothstep(0.05, 0.15, viewDot);
-  intensity *= directness;
-
-  // vec3 c = vec3(34.0/255.0, 139.0/255.0, 34.0/255.0);  // ForestGreen
-  vec3 c = vec3(65.0/255.0, 105.0/255.0, 225.0/255.0);  // RoyalBlue
-
-  gl_FragColor = vec4(intensity * c, 1.0);
-}  
-        `
-      }
-    );
-    return shader;
   }
 }
