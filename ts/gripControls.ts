@@ -1,6 +1,7 @@
 import * as THREE from "three";
 import { ControlInterface } from "./controlInterface";
 import { RewardSound } from "./sfx/rewardSound";
+import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
 
 export class GripControls implements ControlInterface {
   private last0 = new THREE.Vector3();
@@ -19,6 +20,15 @@ export class GripControls implements ControlInterface {
     //   new THREE.Vector3(0, 0, -1), new THREE.Vector3(0, 0, 0),
     //   /*length=*/0.5);
     // this.g0.add(this.arrow);
+
+    const loader = new GLTFLoader();
+
+    loader.load(
+      'models/paw.glb',
+      function (gltf) {
+        g0.add(gltf.scene.clone());
+        g1.add(gltf.scene.clone());
+      });
   }
 
   private static gripResolver(resolve: (g: GripControls) => void,
