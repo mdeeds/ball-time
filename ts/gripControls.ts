@@ -52,14 +52,15 @@ export class GripControls implements ControlInterface {
     if (this.t0.y < this.t1.y) {
       out.copy(this.last0);
       out.sub(this.t0);
-      out.multiplyScalar(6.0);
       // this.g0.add(this.arrow);
     } else {
       out.copy(this.last1);
       out.sub(this.t1);
-      out.multiplyScalar(6.0);
       // this.g1.add(this.arrow);
     }
+    out.x *= 3.0;
+    out.z *= 40.0;
+
     this.t2.copy(out);
     this.t2.normalize();
     // this.arrow.setDirection(this.t2);
