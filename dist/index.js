@@ -445,7 +445,7 @@ class GripControls {
     g1;
     last0 = new THREE.Vector3();
     last1 = new THREE.Vector3();
-    arrow;
+    // private arrow: THREE.ArrowHelper;
     constructor(session, g0, g1, playerGroup) {
         this.g0 = g0;
         this.g1 = g1;
@@ -455,9 +455,10 @@ class GripControls {
         playerGroup.add(g1);
         g0.add(new THREE.AxesHelper(0.3));
         g1.add(new THREE.AxesHelper(0.3));
-        this.arrow = new THREE.ArrowHelper(new THREE.Vector3(0, 0, -1), new THREE.Vector3(0, 0, 0), 
-        /*length=*/ 0.5);
-        this.g0.add(this.arrow);
+        // this.arrow = new THREE.ArrowHelper(
+        //   new THREE.Vector3(0, 0, -1), new THREE.Vector3(0, 0, 0),
+        //   /*length=*/0.5);
+        // this.g0.add(this.arrow);
     }
     static gripResolver(resolve, xr, playerGroup) {
         const session = xr.getSession();
@@ -486,20 +487,22 @@ class GripControls {
         this.t0.copy(this.g0.position);
         this.t1.copy(this.g1.position);
         if (this.t0.y < this.t1.y) {
-            out.copy(this.t0);
-            out.sub(this.last0);
-            this.g0.add(this.arrow);
+            out.copy(this.last0);
+            out.sub(this.t0);
+            out.multiplyScalar(6.0);
+            // this.g0.add(this.arrow);
         }
         else {
-            out.copy(this.t1);
-            out.sub(this.last1);
-            this.g1.add(this.arrow);
+            out.copy(this.last1);
+            out.sub(this.t1);
+            out.multiplyScalar(6.0);
+            // this.g1.add(this.arrow);
         }
         this.t2.copy(out);
         this.t2.normalize();
-        this.arrow.setDirection(this.t2);
-        const len = out.length();
-        this.arrow.setLength(5.0 * len);
+        // this.arrow.setDirection(this.t2);
+        // const len = out.length();
+        // this.arrow.setLength(5.0 * len);
         this.last0.copy(this.t0);
         this.last1.copy(this.t1);
     }
