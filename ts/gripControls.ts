@@ -21,14 +21,13 @@ export class GripControls implements ControlInterface {
     //   /*length=*/0.5);
     // this.g0.add(this.arrow);
 
-    const loader = new GLTFLoader();
-
-    loader.load(
-      'models/paw.glb',
-      function (gltf) {
-        g0.add(gltf.scene.clone());
-        g1.add(gltf.scene.clone());
-      });
+    // const loader = new GLTFLoader();
+    // loader.load(
+    //   'models/paw.glb',
+    //   function (gltf) {
+    //     g0.add(gltf.scene.clone());
+    //     g1.add(gltf.scene.clone());
+    //   });
   }
 
   private static gripResolver(resolve: (g: GripControls) => void,

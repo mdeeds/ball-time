@@ -92,6 +92,7 @@ export class Game {
     const floor = new Floor();
     this.universe.add(floor);
     const floorBtBody = MeshMaker.makeStaticBody(floor, this.ammo);
+    floorBtBody.setFriction(0.5);
     this.physicsWorld.addRigidBody(floorBtBody);
     this.rayCast();
   }
@@ -107,6 +108,7 @@ export class Game {
   private v = new THREE.Vector3();
   private rayCast() {
     this.camera.getWorldPosition(this.v);
+    this.v.sub(this.universe.position);
     const start = new this.ammo.btVector3(this.v.x, this.v.y, this.v.z);
     const end = new this.ammo.btVector3(this.v.x, -10, this.v.z);
 
@@ -115,7 +117,7 @@ export class Game {
     this.physicsWorld.rayTest(start, end, callback);
     if (callback.hasHit()) {
       const intersection = callback.get_m_hitPointWorld();
-      this.universe.position.y = -intersection.y() - 1.0;
+      this.universe.position.y = -intersection.y() + 1.0;
       // const normal = callback.get_m_hitNormalWorld();
       // intersection.op_sub(start);
       // console.log(`Distance to ground: ${intersection.length()}`);
@@ -161,10 +163,10 @@ export class Game {
         this.playerArrow.setDirection(this.t0);
 
         // // Calculate the new position of the tail
-        console.log(`Tail: ${[this.tail.position.x, this.tail.position.z]}`);
+        // console.log(`Tail: ${[this.tail.position.x, this.tail.position.z]}`);
         this.tail.position.sub(delta);
         this.tail.position.setLength(1.0);
-        console.log(`Tail: ${[this.tail.position.x, this.tail.position.z]}`);
+        // console.log(`Tail: ${[this.tail.position.x, this.tail.position.z]}`);
         this.antiTail.position.copy(this.tail.position);
         this.antiTail.position.multiplyScalar(-1);
 

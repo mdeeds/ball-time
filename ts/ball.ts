@@ -19,6 +19,8 @@ export class Ball extends THREE.Object3D {
     shape.setMargin(0.05);
     this.position.y = 1.0;
     this.btBody = MeshMaker.makeBody(this, ammo, shape, 0.5);
+    this.btBody.setDamping(0.0, 0.9);
+    this.btBody.setFriction(0.4);
     this.add(new THREE.AxesHelper(0.5));
   }
 
