@@ -58,8 +58,8 @@ export class GripControls implements ControlInterface {
       out.sub(this.t1);
       // this.g1.add(this.arrow);
     }
-    out.x *= 1.5;
-    out.z *= 80.0;
+    out.x *= 3.0;
+    out.z *= 40.0;
 
     this.t2.copy(out);
     this.t2.normalize();
