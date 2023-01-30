@@ -69,10 +69,8 @@ export class Ball extends THREE.Object3D {
   public release(into: THREE.Object3D) {
     this.isFlying = true;
     const worldPosition = new THREE.Vector3();
-    // this.getWorldPosition(worldPosition);
-    // into.worldToLocal(worldPosition);
-
-    worldPosition.set(0, 10, 0);
+    this.getWorldPosition(worldPosition);
+    into.worldToLocal(worldPosition);
 
     const worldQuaternion = new THREE.Quaternion();
 
@@ -81,7 +79,7 @@ export class Ball extends THREE.Object3D {
     // TODO: This feels like it leaks.
     const transform = new this.ammo.btTransform(
       new this.ammo.btQuaternion(worldQuaternion.x, worldQuaternion.y, worldQuaternion.z, worldQuaternion.w),
-      new this.ammo.btVector3(worldPosition.x, 4.0, worldPosition.z)
+      new this.ammo.btVector3(worldPosition.x, worldPosition.y, worldPosition.z)
     );
 
     this.btBody.getMotionState().getWorldTransform(
@@ -93,7 +91,7 @@ export class Ball extends THREE.Object3D {
     transform.getRotation().setZ(worldQuaternion.z);
     transform.getRotation().setW(worldQuaternion.w);
     transform.getOrigin().setX(worldPosition.x);
-    transform.getOrigin().setY(4.0);
+    transform.getOrigin().setY(worldPosition.y);
     transform.getOrigin().setZ(worldPosition.z);
     ms.setWorldTransform(transform);
     this.btBody.setMotionState(ms);
