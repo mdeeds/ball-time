@@ -8,6 +8,7 @@ import { UnionControls } from "./unionControls";
 import { KeyControls } from "./keyControls";
 import { Ball } from "./ball";
 import { GripControls } from "./gripControls";
+import { Launcher } from "./launcher";
 
 export class Game {
 
@@ -16,8 +17,11 @@ export class Game {
   // World (Scene)
   // +-- Player
   // | +-- Camera
+  // |   + Ball (when caught)
   // + tail
   // +-- Universe
+  //   + Ball (when flying)
+  //   + Launcher
 
   private renderer: THREE.WebGLRenderer;
   private camera: THREE.Camera;
@@ -45,6 +49,7 @@ export class Game {
     this.setUpSky();
     this.setUpFloor();
     this.setUpBall();
+    this.setUpLauncher();
     this.setUpRenderer();
     this.setUpControls();
   }
@@ -96,6 +101,14 @@ export class Game {
     floorBtBody.setFriction(0.5);
     this.physicsWorld.addRigidBody(floorBtBody);
     this.rayCast();
+
+    const pillar = new THREE.Mesh(
+      new THREE.CylinderGeometry(3.0, 0.0, 5.0, 64, 1, false),
+      new THREE.MeshBasicMaterial({ color: 'green' })
+    );
+    pillar.position.set(0, 4, 0);
+    this.universe.add(pillar);
+
   }
 
   private setUpBall() {
@@ -104,6 +117,13 @@ export class Game {
     this.ball.position.set(0, 3, -3);
     this.ball.updateMatrixWorld(true);
     this.ball.release(this.universe);
+  }
+
+  private launcher: Launcher;
+  private setUpLauncher() {
+    this.launcher = new Launcher();
+    this.launcher.position.set(6.0, 0.0, -3.0);
+    this.universe.add(this.launcher);
   }
 
   private v = new THREE.Vector3();
@@ -130,6 +150,35 @@ export class Game {
   }
 
   private t0 = new THREE.Vector3();
+  private t1 = new THREE.Vector3();
+
+  private nextTimeS = 0;
+  private checkBall(currentTimeS: number) {
+    if (currentTimeS < this.nextTimeS) {
+      return;
+    }
+    this.camera.getWorldPosition(this.t0);
+    if (this.ball.getIsFlying()) {
+      this.ball.getWorldPosition(this.t1);
+      this.t0.sub(this.t1);
+      // console.log(`Range: ${this.t0.length()}, y=${this.t0.y}`);
+      if (this.t0.length() < 0.8) {
+        console.log(`Grabbed!`);
+        this.ball.grab(this.camera);
+        this.ball.position.set(0, -0.2, -0.4);
+        this.nextTimeS = currentTimeS + 1.0;
+      }
+    } else {
+      this.launcher.getWorldPosition(this.t1);
+      this.t0.sub(this.t1);
+      this.t0.y = 0;
+      if (this.t0.length() < 0.8) {
+        console.log(`Dropped!`);
+        this.ball.release(this.universe);
+        this.nextTimeS = currentTimeS + 1.0;
+      }
+    }
+  }
 
   private setUpRenderer() {
     this.renderer = new THREE.WebGLRenderer();
@@ -150,9 +199,12 @@ export class Game {
       if (deltaS > 0) {
         this.physicsWorld.stepSimulation(deltaS, 10);
       }
+      this.launcher.tick(deltaS);
       this.ball.update();
+      this.checkBall(elapsedS);
       this.ball.getWorldPosition(tmp);
       this.floor.setBallPosition(tmp);
+
 
       elapsedS += deltaS;
       ++frameCount;

@@ -17,7 +17,7 @@ export class Floor extends THREE.Mesh {
     const v = new THREE.Vector3();
     for (let i = 0; i < vertices.count; ++i) {
       v.fromBufferAttribute(vertices, i);
-      v.y = 3.0 * this.nnn(v.x * 0.1, v.z * 0.1);
+      v.y = 2.0 * this.nnn(v.x * 0.1, v.z * 0.1);
       vertices.setXYZ(i, v.x, v.y, v.z);
     }
     this.geometry.computeVertexNormals();

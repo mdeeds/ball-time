@@ -66,37 +66,61 @@ export class Ball extends THREE.Object3D {
     // this.moveToTarget(null, this.parent, threePosition, threeQuaternion);
   }
 
-  release(into: THREE.Object3D) {
+  public release(into: THREE.Object3D) {
     this.isFlying = true;
     const worldPosition = new THREE.Vector3();
-    worldPosition.copy(this.position);
-    this.localToWorld(worldPosition);
+    // this.getWorldPosition(worldPosition);
+    // into.worldToLocal(worldPosition);
+
+    worldPosition.set(0, 10, 0);
+
     const worldQuaternion = new THREE.Quaternion();
+
+    console.log(`Release at ${[worldPosition.x, worldPosition.y, worldPosition.z]}`);
 
     // TODO: This feels like it leaks.
     const transform = new this.ammo.btTransform(
       new this.ammo.btQuaternion(worldQuaternion.x, worldQuaternion.y, worldQuaternion.z, worldQuaternion.w),
-      new this.ammo.btVector3(worldPosition.x, worldPosition.y, worldPosition.z)
+      new this.ammo.btVector3(worldPosition.x, 4.0, worldPosition.z)
     );
-    this.btBody.getMotionState().setWorldTransform(transform);
+
+    this.btBody.getMotionState().getWorldTransform(
+      transform);
+    const ms = this.btBody.getMotionState();
+
+    transform.getRotation().setX(worldQuaternion.x);
+    transform.getRotation().setY(worldQuaternion.y);
+    transform.getRotation().setZ(worldQuaternion.z);
+    transform.getRotation().setW(worldQuaternion.w);
+    transform.getOrigin().setX(worldPosition.x);
+    transform.getOrigin().setY(4.0);
+    transform.getOrigin().setZ(worldPosition.z);
+    ms.setWorldTransform(transform);
+    this.btBody.setMotionState(ms);
+
     this.btBody.setActivationState(4);
     this.btBody.activate(true);
 
-    {
-      const transform2 = new this.ammo.btTransform()
-      this.btBody.getMotionState().getWorldTransform(transform2);
-    }
-    this.moveToTarget(this.parent, into, this.position, this.quaternion);
-    {
-      const transform2 = new this.ammo.btTransform()
-      this.btBody.getMotionState().getWorldTransform(transform2);
-    }
+    // {
+    //   const transform2 = new this.ammo.btTransform()
+    //   this.btBody.getMotionState().getWorldTransform(transform2);
+    // }
+    // this.moveToTarget(this.parent, into, this.position, this.quaternion);
+    // {
+    //   const transform2 = new this.ammo.btTransform()
+    //   this.btBody.getMotionState().getWorldTransform(transform2);
+    // }
+    into.add(this);
     this.physicsWorld.addRigidBody(this.btBody);
   }
 
-  grab(target: THREE.Object3D) {
+  public grab(target: THREE.Object3D) {
     this.isFlying = false;
     this.moveToTarget(this.parent, target, this.position, this.quaternion);
     this.physicsWorld.removeRigidBody(this.btBody);
+  }
+
+  public getIsFlying(): boolean {
+    return this.isFlying;
   }
 }
