@@ -108,7 +108,6 @@ export class Game {
     );
     pillar.position.set(0, 4, 0);
     this.universe.add(pillar);
-
   }
 
   private setUpBall() {
@@ -174,7 +173,8 @@ export class Game {
       this.t0.y = 0;
       if (this.t0.length() < 0.8) {
         console.log(`Dropped!`);
-        this.ball.release(this.universe);
+        this.ball.grab(this.launcher.getBody());
+        this.ball.position.set(0, 4.5, 0);
         this.nextTimeS = currentTimeS + 1.0;
       }
     }

@@ -22,7 +22,7 @@ export class Ball extends THREE.Object3D {
     this.btBody = MeshMaker.makeBody(this, ammo, shape, 0.5);
     this.btBody.setDamping(0.0, 0.9);
     this.btBody.setFriction(0.4);
-    this.add(new THREE.AxesHelper(0.5));
+    this.add(new THREE.AxesHelper(100));
   }
 
   private moveToTarget(
@@ -46,6 +46,7 @@ export class Ball extends THREE.Object3D {
     iso.decompose(this.position, this.quaternion, this.scale);
     this.matrix.compose(this.position, this.quaternion, this.scale);
     if (target != this.parent) {
+      this.parent.remove(this);
       target.add(this);
     }
   }
