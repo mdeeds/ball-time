@@ -36,9 +36,6 @@ export class Game {
   private ball: Ball;
   private floor: Floor;
 
-  private playerArrow = new THREE.ArrowHelper(
-    new THREE.Vector3(0, 0, -1), new THREE.Vector3(0, 1.3, -1), 1.0);
-
   private physicsWorld: Ammo.btDiscreteDynamicsWorld;
 
   constructor(private ammo: typeof Ammo) {
@@ -75,7 +72,6 @@ export class Game {
     this.camera.position.set(0, 1.7, 0);
     this.camera.lookAt(0, 1.7, -100);
     this.player.add(this.camera);
-    this.scene.add(this.playerArrow);
     this.scene.add(this.player);
     this.scene.add(this.tail);
     this.scene.add(this.antiTail);
@@ -110,12 +106,13 @@ export class Game {
     this.universe.add(pillar);
   }
 
+  private zero = new THREE.Vector3(0, 0, 0);
   private setUpBall() {
     this.ball = new Ball(this.ammo, this.physicsWorld);
     this.universe.add(this.ball);
     this.ball.position.set(0, 3, -3);
     this.ball.updateMatrixWorld(true);
-    this.ball.release(this.universe);
+    this.ball.release(this.universe, this.zero);
   }
 
   private launcher: Launcher;
@@ -150,8 +147,10 @@ export class Game {
 
   private t0 = new THREE.Vector3();
   private t1 = new THREE.Vector3();
+  private nm = new THREE.Matrix3();
 
   private nextTimeS = 0;
+  private launchTimeS = 0;
   private checkBall(currentTimeS: number) {
     if (currentTimeS < this.nextTimeS) {
       return;
@@ -168,16 +167,31 @@ export class Game {
         this.nextTimeS = currentTimeS + 1.0;
       }
     } else {
-      this.launcher.getWorldPosition(this.t1);
-      this.t0.sub(this.t1);
-      this.t0.y = 0;
-      if (this.t0.length() < 0.8) {
-        console.log(`Dropped!`);
-        this.ball.grab(this.launcher.getBody());
-        this.ball.position.set(0, 4.5, 0);
-        this.nextTimeS = currentTimeS + 1.0;
+      if (this.launchTimeS == 0) {
+        this.launcher.getWorldPosition(this.t1);
+        this.t0.sub(this.t1);
+        this.t0.y = 0;
+        if (this.t0.length() < 0.8) {
+          console.log(`Dropped!`);
+          this.ball.grab(this.launcher.getBody());
+          this.ball.position.set(0, 4.5, 0);
+          this.nextTimeS = currentTimeS + 1.0;
+          this.launchTimeS = currentTimeS + 3.0;
+        }
+      } else if (currentTimeS >= this.launchTimeS) {
+        this.launchTimeS = 0;
+        this.t1.set(0, 5 + Math.random() * 2, 0);
+
+        this.launcher.getBody().updateMatrixWorld();
+        this.nm.getNormalMatrix(this.launcher.getBody().matrixWorld)
+        this.t1.applyMatrix3(this.nm);
+        this.ball.release(this.universe, this.t1);
       }
     }
+
+
+
+
   }
 
   private setUpRenderer() {
@@ -214,10 +228,6 @@ export class Game {
       if (delta.length() > 0) {
         delta.applyQuaternion(this.player.quaternion);
         this.universe.position.sub(delta);
-        this.t0.copy(delta);
-        this.t0.normalize();
-        this.playerArrow.setDirection(this.t0);
-
         // // Calculate the new position of the tail
         // console.log(`Tail: ${[this.tail.position.x, this.tail.position.z]}`);
         this.tail.position.sub(delta);

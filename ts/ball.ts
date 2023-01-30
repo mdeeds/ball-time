@@ -67,7 +67,7 @@ export class Ball extends THREE.Object3D {
     // this.moveToTarget(null, this.parent, threePosition, threeQuaternion);
   }
 
-  public release(into: THREE.Object3D) {
+  public release(into: THREE.Object3D, velocity: THREE.Vector3) {
     this.isFlying = true;
     const worldPosition = new THREE.Vector3();
     this.getWorldPosition(worldPosition);
@@ -94,7 +94,13 @@ export class Ball extends THREE.Object3D {
     transform.getOrigin().setX(worldPosition.x);
     transform.getOrigin().setY(worldPosition.y);
     transform.getOrigin().setZ(worldPosition.z);
+
+    const lin_vel = new this.ammo.btVector3(
+      velocity.x, velocity.y, velocity.z);
+    this.btBody.setLinearVelocity(lin_vel);
+
     ms.setWorldTransform(transform);
+
     this.btBody.setMotionState(ms);
 
     this.btBody.setActivationState(4);

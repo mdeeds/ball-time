@@ -51,7 +51,7 @@ class Ball extends THREE.Object3D {
         this.btBody = meshMaker_1.MeshMaker.makeBody(this, ammo, shape, 0.5);
         this.btBody.setDamping(0.0, 0.9);
         this.btBody.setFriction(0.4);
-        this.add(new THREE.AxesHelper(0.5));
+        this.add(new THREE.AxesHelper(100));
     }
     moveToTarget(source, target, threePosition, threeQuaternion) {
         const iso = new THREE.Matrix4();
@@ -69,6 +69,7 @@ class Ball extends THREE.Object3D {
         iso.decompose(this.position, this.quaternion, this.scale);
         this.matrix.compose(this.position, this.quaternion, this.scale);
         if (target != this.parent) {
+            this.parent.remove(this);
             target.add(this);
         }
     }
@@ -87,32 +88,49 @@ class Ball extends THREE.Object3D {
         // const threeQuaternion = new THREE.Quaternion(quaternion.x(), quaternion.y(), quaternion.z(), quaternion.w());
         // this.moveToTarget(null, this.parent, threePosition, threeQuaternion);
     }
-    release(into) {
+    release(into, velocity) {
         this.isFlying = true;
         const worldPosition = new THREE.Vector3();
-        worldPosition.copy(this.position);
-        this.localToWorld(worldPosition);
+        this.getWorldPosition(worldPosition);
+        into.worldToLocal(worldPosition);
         const worldQuaternion = new THREE.Quaternion();
+        console.log(`Release at ${[worldPosition.x, worldPosition.y, worldPosition.z]}`);
         // TODO: This feels like it leaks.
         const transform = new this.ammo.btTransform(new this.ammo.btQuaternion(worldQuaternion.x, worldQuaternion.y, worldQuaternion.z, worldQuaternion.w), new this.ammo.btVector3(worldPosition.x, worldPosition.y, worldPosition.z));
-        this.btBody.getMotionState().setWorldTransform(transform);
+        this.btBody.getMotionState().getWorldTransform(transform);
+        const ms = this.btBody.getMotionState();
+        transform.getRotation().setX(worldQuaternion.x);
+        transform.getRotation().setY(worldQuaternion.y);
+        transform.getRotation().setZ(worldQuaternion.z);
+        transform.getRotation().setW(worldQuaternion.w);
+        transform.getOrigin().setX(worldPosition.x);
+        transform.getOrigin().setY(worldPosition.y);
+        transform.getOrigin().setZ(worldPosition.z);
+        const lin_vel = new this.ammo.btVector3(velocity.x, velocity.y, velocity.z);
+        this.btBody.setLinearVelocity(lin_vel);
+        ms.setWorldTransform(transform);
+        this.btBody.setMotionState(ms);
         this.btBody.setActivationState(4);
         this.btBody.activate(true);
-        {
-            const transform2 = new this.ammo.btTransform();
-            this.btBody.getMotionState().getWorldTransform(transform2);
-        }
-        this.moveToTarget(this.parent, into, this.position, this.quaternion);
-        {
-            const transform2 = new this.ammo.btTransform();
-            this.btBody.getMotionState().getWorldTransform(transform2);
-        }
+        // {
+        //   const transform2 = new this.ammo.btTransform()
+        //   this.btBody.getMotionState().getWorldTransform(transform2);
+        // }
+        // this.moveToTarget(this.parent, into, this.position, this.quaternion);
+        // {
+        //   const transform2 = new this.ammo.btTransform()
+        //   this.btBody.getMotionState().getWorldTransform(transform2);
+        // }
+        into.add(this);
         this.physicsWorld.addRigidBody(this.btBody);
     }
     grab(target) {
         this.isFlying = false;
         this.moveToTarget(this.parent, target, this.position, this.quaternion);
         this.physicsWorld.removeRigidBody(this.btBody);
+    }
+    getIsFlying() {
+        return this.isFlying;
     }
 }
 exports.Ball = Ball;
@@ -230,7 +248,7 @@ class Floor extends THREE.Mesh {
         const v = new THREE.Vector3();
         for (let i = 0; i < vertices.count; ++i) {
             v.fromBufferAttribute(vertices, i);
-            v.y = 3.0 * this.nnn(v.x * 0.1, v.z * 0.1);
+            v.y = 2.0 * this.nnn(v.x * 0.1, v.z * 0.1);
             vertices.setXYZ(i, v.x, v.y, v.z);
         }
         this.geometry.computeVertexNormals();
@@ -307,6 +325,8 @@ class FloorMaterial extends THREE.ShaderMaterial {
 varying vec3 vNormal;
 varying float viewDot;
 varying vec3 worldPosition;
+varying float vYHeight;
+uniform vec3 ballPosition;
 void main() {
   vec4 wp = modelMatrix * vec4(position, 1.0);
   wp /= wp.w;
@@ -316,6 +336,7 @@ void main() {
   vec3 toCamera = cameraPosition - worldPosition;
   toCamera /= length(toCamera);
   viewDot = dot(normal, toCamera);
+  vYHeight = max(0.0, ballPosition.y - worldPosition.y);
 }
         `,
             fragmentShader: `
@@ -323,6 +344,7 @@ varying vec3 vNormal;
 varying float viewDot;
 varying vec3 worldPosition;
 uniform vec3 ballPosition;
+varying float vYHeight;
 void main() {
   float intensity = pow((clamp(vNormal.y, 0.0, 1.0)), 3.0);
   float directness = 0.5 + 0.5 * smoothstep(0.05, 0.15, viewDot);
@@ -331,7 +353,7 @@ void main() {
   // vec3 c = vec3(34.0/255.0, 139.0/255.0, 34.0/255.0);  // ForestGreen
   vec3 c = vec3(65.0/255.0, 105.0/255.0, 225.0/255.0);  // RoyalBlue
 
-  intensity *= smoothstep(0.05, 0.15, 
+  intensity *= smoothstep(0.05, 0.15 + vYHeight * 0.5, 
     length(worldPosition.xz - ballPosition.xz));
 
   gl_FragColor = vec4(intensity * c, 1.0);
@@ -388,6 +410,7 @@ const unionControls_1 = __webpack_require__(87);
 const keyControls_1 = __webpack_require__(26);
 const ball_1 = __webpack_require__(340);
 const gripControls_1 = __webpack_require__(474);
+const launcher_1 = __webpack_require__(135);
 class Game {
     ammo;
     // As is our convention, the universe is moved around the player, and the player is in world space:
@@ -395,8 +418,11 @@ class Game {
     // World (Scene)
     // +-- Player
     // | +-- Camera
+    // |   + Ball (when caught)
     // + tail
     // +-- Universe
+    //   + Ball (when flying)
+    //   + Launcher
     renderer;
     camera;
     scene = new THREE.Scene();
@@ -407,7 +433,6 @@ class Game {
     controls = new unionControls_1.UnionControls();
     ball;
     floor;
-    playerArrow = new THREE.ArrowHelper(new THREE.Vector3(0, 0, -1), new THREE.Vector3(0, 1.3, -1), 1.0);
     physicsWorld;
     constructor(ammo) {
         this.ammo = ammo;
@@ -417,6 +442,7 @@ class Game {
         this.setUpSky();
         this.setUpFloor();
         this.setUpBall();
+        this.setUpLauncher();
         this.setUpRenderer();
         this.setUpControls();
     }
@@ -435,7 +461,6 @@ class Game {
         this.camera.position.set(0, 1.7, 0);
         this.camera.lookAt(0, 1.7, -100);
         this.player.add(this.camera);
-        this.scene.add(this.playerArrow);
         this.scene.add(this.player);
         this.scene.add(this.tail);
         this.scene.add(this.antiTail);
@@ -455,13 +480,23 @@ class Game {
         floorBtBody.setFriction(0.5);
         this.physicsWorld.addRigidBody(floorBtBody);
         this.rayCast();
+        const pillar = new THREE.Mesh(new THREE.CylinderGeometry(3.0, 0.0, 5.0, 64, 1, false), new THREE.MeshBasicMaterial({ color: 'green' }));
+        pillar.position.set(0, 4, 0);
+        this.universe.add(pillar);
     }
+    zero = new THREE.Vector3(0, 0, 0);
     setUpBall() {
         this.ball = new ball_1.Ball(this.ammo, this.physicsWorld);
         this.universe.add(this.ball);
         this.ball.position.set(0, 3, -3);
         this.ball.updateMatrixWorld(true);
-        this.ball.release(this.universe);
+        this.ball.release(this.universe, this.zero);
+    }
+    launcher;
+    setUpLauncher() {
+        this.launcher = new launcher_1.Launcher();
+        this.launcher.position.set(6.0, 0.0, -3.0);
+        this.universe.add(this.launcher);
     }
     v = new THREE.Vector3();
     rayCast() {
@@ -485,6 +520,49 @@ class Game {
         }
     }
     t0 = new THREE.Vector3();
+    t1 = new THREE.Vector3();
+    nm = new THREE.Matrix3();
+    nextTimeS = 0;
+    launchTimeS = 0;
+    checkBall(currentTimeS) {
+        if (currentTimeS < this.nextTimeS) {
+            return;
+        }
+        this.camera.getWorldPosition(this.t0);
+        if (this.ball.getIsFlying()) {
+            this.ball.getWorldPosition(this.t1);
+            this.t0.sub(this.t1);
+            // console.log(`Range: ${this.t0.length()}, y=${this.t0.y}`);
+            if (this.t0.length() < 0.8) {
+                console.log(`Grabbed!`);
+                this.ball.grab(this.camera);
+                this.ball.position.set(0, -0.2, -0.4);
+                this.nextTimeS = currentTimeS + 1.0;
+            }
+        }
+        else {
+            if (this.launchTimeS == 0) {
+                this.launcher.getWorldPosition(this.t1);
+                this.t0.sub(this.t1);
+                this.t0.y = 0;
+                if (this.t0.length() < 0.8) {
+                    console.log(`Dropped!`);
+                    this.ball.grab(this.launcher.getBody());
+                    this.ball.position.set(0, 4.5, 0);
+                    this.nextTimeS = currentTimeS + 1.0;
+                    this.launchTimeS = currentTimeS + 3.0;
+                }
+            }
+            else if (currentTimeS >= this.launchTimeS) {
+                this.launchTimeS = 0;
+                this.t1.set(0, 5 + Math.random() * 2, 0);
+                this.launcher.getBody().updateMatrixWorld();
+                this.nm.getNormalMatrix(this.launcher.getBody().matrixWorld);
+                this.t1.applyMatrix3(this.nm);
+                this.ball.release(this.universe, this.t1);
+            }
+        }
+    }
     setUpRenderer() {
         this.renderer = new THREE.WebGLRenderer();
         this.renderer.shadowMap.enabled = true;
@@ -502,7 +580,9 @@ class Game {
             if (deltaS > 0) {
                 this.physicsWorld.stepSimulation(deltaS, 10);
             }
+            this.launcher.tick(deltaS);
             this.ball.update();
+            this.checkBall(elapsedS);
             this.ball.getWorldPosition(tmp);
             this.floor.setBallPosition(tmp);
             elapsedS += deltaS;
@@ -513,9 +593,6 @@ class Game {
             if (delta.length() > 0) {
                 delta.applyQuaternion(this.player.quaternion);
                 this.universe.position.sub(delta);
-                this.t0.copy(delta);
-                this.t0.normalize();
-                this.playerArrow.setDirection(this.t0);
                 // // Calculate the new position of the tail
                 // console.log(`Tail: ${[this.tail.position.x, this.tail.position.z]}`);
                 this.tail.position.sub(delta);
@@ -715,6 +792,61 @@ class KeyControls {
 }
 exports.KeyControls = KeyControls;
 //# sourceMappingURL=keyControls.js.map
+
+/***/ }),
+
+/***/ 135:
+/***/ (function(__unused_webpack_module, exports, __webpack_require__) {
+
+
+var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    var desc = Object.getOwnPropertyDescriptor(m, k);
+    if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
+      desc = { enumerable: true, get: function() { return m[k]; } };
+    }
+    Object.defineProperty(o, k2, desc);
+}) : (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    o[k2] = m[k];
+}));
+var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
+    Object.defineProperty(o, "default", { enumerable: true, value: v });
+}) : function(o, v) {
+    o["default"] = v;
+});
+var __importStar = (this && this.__importStar) || function (mod) {
+    if (mod && mod.__esModule) return mod;
+    var result = {};
+    if (mod != null) for (var k in mod) if (k !== "default" && Object.prototype.hasOwnProperty.call(mod, k)) __createBinding(result, mod, k);
+    __setModuleDefault(result, mod);
+    return result;
+};
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.Launcher = void 0;
+const THREE = __importStar(__webpack_require__(396));
+class Launcher extends THREE.Object3D {
+    body;
+    constructor() {
+        super();
+        const height = 4.0;
+        this.body = new THREE.Mesh(new THREE.CylinderGeometry(0.2, 0.1, height, 16, 3, false), new THREE.MeshBasicMaterial({ color: '#f3e' }));
+        this.body.geometry.translate(0, height / 2, 0);
+        this.body.rotateOnAxis(new THREE.Vector3(1, 0, 0), 0.5);
+        this.add(this.body);
+    }
+    yAxis = new THREE.Vector3(0, 1, 0);
+    q = new THREE.Quaternion();
+    tick(dt) {
+        this.q.setFromAxisAngle(this.yAxis, 0.5 * dt);
+        this.body.quaternion.premultiply(this.q);
+    }
+    getBody() {
+        return this.body;
+    }
+}
+exports.Launcher = Launcher;
+//# sourceMappingURL=launcher.js.map
 
 /***/ }),
 

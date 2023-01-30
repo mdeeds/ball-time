@@ -23,7 +23,7 @@ void main() {
   vec3 toCamera = cameraPosition - worldPosition;
   toCamera /= length(toCamera);
   viewDot = dot(normal, toCamera);
-  vYHeight = ballPosition.y - worldPosition.y;
+  vYHeight = max(0.0, ballPosition.y - worldPosition.y);
 }
         `,
       fragmentShader: `
