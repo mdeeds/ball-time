@@ -236,11 +236,8 @@ export class Game {
         this.antiTail.position.copy(this.tail.position);
         this.antiTail.position.multiplyScalar(-1);
 
-      } // if (delta.length() > 0)
+      }
 
-      // // "LookAt" a position in front of the player opposite the tail.
-      // tmp.copy(this.tail.position);
-      // tmp.multiplyScalar(-1);
       this.player.lookAt(this.tail.position);
       // this.antiTail.position.copy(tmp);
 
