@@ -12,7 +12,7 @@ export class AudioSource extends THREE.Object3D {
   private lowPassLeft: BiquadFilterNode;
   private lowPassRight: BiquadFilterNode;
 
-  constructor(private listener: THREE.Object3D,
+  constructor(listener: THREE.Object3D,
     private audioCtx: AudioContext) {
     super();
     this.leftEar.position.set(-0.15, 0, 0);
