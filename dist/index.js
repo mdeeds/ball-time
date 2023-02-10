@@ -411,8 +411,10 @@ const keyControls_1 = __webpack_require__(26);
 const ball_1 = __webpack_require__(340);
 const gripControls_1 = __webpack_require__(474);
 const launcher_1 = __webpack_require__(135);
+const musicSource_1 = __webpack_require__(444);
 class Game {
     ammo;
+    audioCtx;
     // As is our convention, the universe is moved around the player, and the player is in world space:
     //
     // World (Scene)
@@ -433,9 +435,11 @@ class Game {
     controls = new unionControls_1.UnionControls();
     ball;
     floor;
+    music;
     physicsWorld;
-    constructor(ammo) {
+    constructor(ammo, audioCtx) {
         this.ammo = ammo;
+        this.audioCtx = audioCtx;
         document.body.innerHTML = "";
         this.setUpPhysics();
         this.setUpCamera();
@@ -491,6 +495,8 @@ class Game {
         this.ball.position.set(0, 3, -3);
         this.ball.updateMatrixWorld(true);
         this.ball.release(this.universe, this.zero);
+        this.music = new musicSource_1.MusicSource('music/play ball.mp3', this.camera, this.audioCtx);
+        this.ball.add(this.music);
     }
     launcher;
     setUpLauncher() {
@@ -582,6 +588,7 @@ class Game {
             }
             this.launcher.tick(deltaS);
             this.ball.update();
+            this.music.update();
             this.checkBall(elapsedS);
             this.ball.getWorldPosition(tmp);
             this.floor.setBallPosition(tmp);
@@ -748,7 +755,7 @@ const make = async function () {
 };
 const go = async function () {
     const ammo = await make();
-    const game = new game_1.Game(ammo);
+    const game = new game_1.Game(ammo, new AudioContext());
 };
 go();
 //# sourceMappingURL=index.js.map
@@ -1035,6 +1042,180 @@ class RewardSound {
 }
 exports.RewardSound = RewardSound;
 //# sourceMappingURL=rewardSound.js.map
+
+/***/ }),
+
+/***/ 381:
+/***/ (function(__unused_webpack_module, exports, __webpack_require__) {
+
+
+var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    var desc = Object.getOwnPropertyDescriptor(m, k);
+    if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
+      desc = { enumerable: true, get: function() { return m[k]; } };
+    }
+    Object.defineProperty(o, k2, desc);
+}) : (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    o[k2] = m[k];
+}));
+var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
+    Object.defineProperty(o, "default", { enumerable: true, value: v });
+}) : function(o, v) {
+    o["default"] = v;
+});
+var __importStar = (this && this.__importStar) || function (mod) {
+    if (mod && mod.__esModule) return mod;
+    var result = {};
+    if (mod != null) for (var k in mod) if (k !== "default" && Object.prototype.hasOwnProperty.call(mod, k)) __createBinding(result, mod, k);
+    __setModuleDefault(result, mod);
+    return result;
+};
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.AudioSource = void 0;
+const THREE = __importStar(__webpack_require__(396));
+class AudioSource extends THREE.Object3D {
+    audioCtx;
+    leftEar = new THREE.Object3D();
+    rightEar = new THREE.Object3D();
+    leftIn;
+    rightIn;
+    delayLeft;
+    delayRight;
+    lowPassLeft;
+    lowPassRight;
+    constructor(listener, audioCtx) {
+        super();
+        this.audioCtx = audioCtx;
+        this.leftEar.position.set(-0.15, 0, 0);
+        this.leftEar.rotateY(75 * Math.PI / 180);
+        listener.add(this.leftEar);
+        this.rightEar.position.set(0.15, 0, 0);
+        this.rightEar.rotateY(-75 * Math.PI / 180);
+        listener.add(this.rightEar);
+        this.leftIn = this.audioCtx.createGain();
+        this.rightIn = this.audioCtx.createGain();
+        this.delayLeft = this.audioCtx.createDelay();
+        this.delayRight = this.audioCtx.createDelay();
+        this.lowPassLeft = this.audioCtx.createBiquadFilter();
+        this.lowPassRight = this.audioCtx.createBiquadFilter();
+        this.leftIn.connect(this.delayLeft);
+        this.rightIn.connect(this.delayRight);
+        this.delayLeft.connect(this.lowPassLeft);
+        this.delayRight.connect(this.lowPassRight);
+        const merger = this.audioCtx.createChannelMerger(2);
+        this.lowPassLeft.connect(merger, 0, 0);
+        this.lowPassRight.connect(merger, 0, 1);
+        merger.connect(this.audioCtx.destination);
+    }
+    l = new THREE.Vector3();
+    getDistance(o) {
+        o.getWorldPosition(this.l);
+        this.l.sub(this.thisWorldPosition);
+        return this.l.length();
+    }
+    setDelayAndGain(o, d, g) {
+        const len = this.getDistance(o);
+        let delay = len / 343; // 343 = speed of sound
+        if (delay > 1.0) {
+            console.log(`Delay: ${delay}; len: ${len}`);
+            delay = 1.0;
+        }
+        const targetTime = this.audioCtx.currentTime + 0.01;
+        d.delayTime.linearRampToValueAtTime(delay, targetTime);
+        if (len < 2.0) {
+            g.gain.linearRampToValueAtTime(1.0, targetTime);
+        }
+        else {
+            g.gain.linearRampToValueAtTime(4.0 / (len * len), targetTime);
+        }
+    }
+    getCutoff(theta) {
+        // Form: r = a cos(t) + b
+        // Max = a + b, min = b - a
+        // Max = ln(20000), Min = ln(200)
+        // => 2b = ln(20000) + ln(200)
+        const b = 0.5 * (Math.log(20000) + Math.log(200));
+        // => a = b - ln(200)
+        const a = b - Math.log(200);
+        const r = a * Math.cos(theta) + b;
+        return Math.exp(r);
+    }
+    oPosition = new THREE.Vector3();
+    setFilter(o, f) {
+        o.worldToLocal(this.thisWorldPosition);
+        const angle = Math.atan2(this.oPosition.z, this.oPosition.x);
+        // Need to make this an exponential change
+        // Also need to handle front vs back of head.
+        const cutoff = this.getCutoff(angle);
+        f.frequency.linearRampToValueAtTime(cutoff, this.audioCtx.currentTime + 0.01);
+    }
+    headForward = new THREE.Vector3(0, 0, -1);
+    getAngle(o) {
+        o.getWorldPosition(this.l);
+        this.l.sub(this.thisWorldPosition);
+        // Need to take into account the orientation of `o` which is the head.
+        return this.l.angleTo(this.headForward);
+    }
+    setChannel(ear, delay, filter, gain) {
+        this.setDelayAndGain(ear, delay, gain);
+        this.setFilter(ear, filter);
+    }
+    thisWorldPosition = new THREE.Vector3();
+    // Sets the delayLeft and delayRight to match the time it takes
+    // sound to travel from the WorldPosition of `this` to the
+    // `leftEar` and `rightEar`.  Also updates `lowPassLeft` and
+    // `lowPassRight` to close when `this` is on the opposite side of
+    // the head.
+    update() {
+        this.getWorldPosition(this.thisWorldPosition);
+        this.setChannel(this.leftEar, this.delayLeft, this.lowPassLeft, this.leftIn);
+        this.setChannel(this.rightEar, this.delayRight, this.lowPassRight, this.rightIn);
+    }
+    connect(input) {
+        input.connect(this.leftIn);
+        input.connect(this.rightIn);
+    }
+}
+exports.AudioSource = AudioSource;
+//# sourceMappingURL=audioSource.js.map
+
+/***/ }),
+
+/***/ 444:
+/***/ ((__unused_webpack_module, exports, __webpack_require__) => {
+
+
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.MusicSource = void 0;
+const audioSource_1 = __webpack_require__(381);
+class MusicSource extends audioSource_1.AudioSource {
+    constructor(url, listener, audioCtx) {
+        console.log('Construct source');
+        super(listener, audioCtx);
+        const audioElement = document.createElement('audio');
+        // audioElement.setAttribute('controls', '');
+        audioElement.src = url;
+        audioElement.setAttribute('type', 'audio/ogg');
+        audioElement.loop = true;
+        let mse = null;
+        audioElement.addEventListener('canplay', () => {
+            if (mse != null) {
+                // Already playing.
+                return;
+            }
+            mse = audioCtx.createMediaElementSource(audioElement);
+            // source.connect(audioCtx.destination);
+            this.connect(mse);
+            audioElement.play();
+            console.log('Playing');
+        });
+        document.body.appendChild(audioElement);
+    }
+}
+exports.MusicSource = MusicSource;
+//# sourceMappingURL=musicSource.js.map
 
 /***/ }),
 

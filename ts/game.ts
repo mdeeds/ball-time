@@ -9,6 +9,7 @@ import { KeyControls } from "./keyControls";
 import { Ball } from "./ball";
 import { GripControls } from "./gripControls";
 import { Launcher } from "./launcher";
+import { MusicSource } from "./tk/musicSource";
 
 export class Game {
 
@@ -35,10 +36,11 @@ export class Game {
   private controls = new UnionControls();
   private ball: Ball;
   private floor: Floor;
+  private music: MusicSource;
 
   private physicsWorld: Ammo.btDiscreteDynamicsWorld;
 
-  constructor(private ammo: typeof Ammo) {
+  constructor(private ammo: typeof Ammo, private audioCtx: AudioContext) {
     document.body.innerHTML = "";
 
     this.setUpPhysics();
@@ -113,6 +115,10 @@ export class Game {
     this.ball.position.set(0, 3, -3);
     this.ball.updateMatrixWorld(true);
     this.ball.release(this.universe, this.zero);
+
+    this.music = new MusicSource('music/play ball.mp3',
+      this.camera, this.audioCtx);
+    this.ball.add(this.music)
   }
 
   private launcher: Launcher;
@@ -188,10 +194,6 @@ export class Game {
         this.ball.release(this.universe, this.t1);
       }
     }
-
-
-
-
   }
 
   private setUpRenderer() {
@@ -215,6 +217,7 @@ export class Game {
       }
       this.launcher.tick(deltaS);
       this.ball.update();
+      this.music.update();
       this.checkBall(elapsedS);
       this.ball.getWorldPosition(tmp);
       this.floor.setBallPosition(tmp);

@@ -11,7 +11,7 @@ const make = async function (): Promise<typeof Ammo> {
 
 const go = async function () {
   const ammo = await make();
-  const game = new Game(ammo);
+  const game = new Game(ammo, new AudioContext());
 }
 
 go();

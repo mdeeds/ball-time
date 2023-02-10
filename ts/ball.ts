@@ -3,6 +3,7 @@ import * as THREE from "three";
 import Ammo from "ammojs-typed";
 import { MeshMaker } from "./meshMaker";
 import { BallMaterial } from "./ballMaterial";
+import { MusicSource } from "./tk/musicSource";
 
 export class Ball extends THREE.Object3D {
   private isFlying = false;

@@ -33,8 +33,12 @@ export class AudioSource extends THREE.Object3D {
     this.rightIn.connect(this.delayRight);
     this.delayLeft.connect(this.lowPassLeft);
     this.delayRight.connect(this.lowPassRight);
-    this.lowPassLeft.connect(this.audioCtx.destination, 0, 0);
-    this.lowPassRight.connect(this.audioCtx.destination, 0, 1);
+
+    const merger = this.audioCtx.createChannelMerger(2);
+    this.lowPassLeft.connect(merger, 0, 0);
+    this.lowPassRight.connect(merger, 0, 1);
+    merger.connect(this.audioCtx.destination);
+
   }
 
   private l = new THREE.Vector3();
@@ -47,7 +51,11 @@ export class AudioSource extends THREE.Object3D {
   private setDelayAndGain(o: THREE.Object3D, d: DelayNode,
     g: GainNode) {
     const len = this.getDistance(o);
-    const delay = len / 343;  // 343 = speed of sound
+    let delay = len / 343;  // 343 = speed of sound
+    if (delay > 1.0) {
+      console.log(`Delay: ${delay}; len: ${len}`);
+      delay = 1.0;
+    }
     const targetTime = this.audioCtx.currentTime + 0.01;
     d.delayTime.linearRampToValueAtTime(delay, targetTime);
     if (len < 2.0) {
@@ -104,6 +112,11 @@ export class AudioSource extends THREE.Object3D {
   public update() {
     this.getWorldPosition(this.thisWorldPosition);
     this.setChannel(this.leftEar, this.delayLeft, this.lowPassLeft, this.leftIn)
-    this.setChannel(this.leftEar, this.delayLeft, this.lowPassLeft, this.leftIn)
+    this.setChannel(this.rightEar, this.delayRight, this.lowPassRight, this.rightIn)
+  }
+
+  public connect(input: AudioNode) {
+    input.connect(this.leftIn);
+    input.connect(this.rightIn);
   }
 }
