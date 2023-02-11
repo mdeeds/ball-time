@@ -56,34 +56,37 @@ export class AudioSource extends THREE.Object3D {
       console.log(`Delay: ${delay}; len: ${len}`);
       delay = 1.0;
     }
-    const targetTime = this.audioCtx.currentTime + 0.01;
-    d.delayTime.linearRampToValueAtTime(delay, targetTime);
+    const targetTime = this.audioCtx.currentTime;
+    d.delayTime.setTargetAtTime(delay, targetTime, 0.01);
     if (len < 2.0) {
-      g.gain.linearRampToValueAtTime(1.0, targetTime);
+      g.gain.setTargetAtTime(1.0, targetTime, 0.01);
     } else {
-      g.gain.linearRampToValueAtTime(4.0 / (len * len), targetTime);
+      g.gain.setTargetAtTime(4.0 / (len * len), targetTime, 0.01);
     }
   }
 
-  private getCutoff(theta: number): number {
-    // Form: r = a cos(t) + b
-    // Max = a + b, min = b - a
-    // Max = ln(20000), Min = ln(200)
-    // => 2b = ln(20000) + ln(200)
-    const b = 0.5 * (Math.log(20000) + Math.log(200));
-    // => a = b - ln(200)
-    const a = b - Math.log(200)
-    const r = a * Math.cos(theta) + b;
-    return Math.exp(r);
+  private t = new THREE.Vector3();
+  private getCutoff(observer: THREE.Object3D): number {
+    this.t.copy(this.thisWorldPosition);
+    observer.worldToLocal(this.t);
+    const r2 = this.t.lengthSq();
+    const r = Math.sqrt(r2);
+    if (r < 0.01) {
+      return 20000;
+    }
+    const cosTheta = this.t.z / r;
+    const q = (cosTheta + 1.1) / (2.1);
+    const m = 200.0 * q / r2;
+    const ln20 = Math.log(20);
+    const ln20000 = Math.log(20000);
+    const lnf = m * (ln20000 - ln20) + ln20;
+    const cutoff = Math.exp(lnf);
+    return cutoff > 80000 ? 80000 : cutoff;
   }
 
   private oPosition = new THREE.Vector3();
   private setFilter(o: THREE.Object3D, f: BiquadFilterNode) {
-    o.worldToLocal(this.thisWorldPosition);
-    const angle = Math.atan2(this.oPosition.z, this.oPosition.x);
-    // Need to make this an exponential change
-    // Also need to handle front vs back of head.
-    const cutoff = this.getCutoff(angle);
+    const cutoff = this.getCutoff(o);
     f.frequency.linearRampToValueAtTime(cutoff, this.audioCtx.currentTime + 0.01);
   }
 
