@@ -756,7 +756,14 @@ const go = async function () {
     const ammo = await make();
     const game = new game_1.Game(ammo, new AudioContext());
 };
-go();
+document.body.onload = () => {
+    const b = document.createElement('button');
+    b.textContent = 'Go!';
+    b.onclick = () => {
+        go();
+    };
+    document.body.appendChild(b);
+};
 //# sourceMappingURL=index.js.map
 
 /***/ }),

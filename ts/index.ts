@@ -14,4 +14,12 @@ const go = async function () {
   const game = new Game(ammo, new AudioContext());
 }
 
-go();
+document.body.onload = () => {
+  const b = document.createElement('button');
+  b.textContent = 'Go!';
+  b.onclick = () => {
+    go();
+  }
+  document.body.appendChild(b);
+}
+
