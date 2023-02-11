@@ -23,7 +23,11 @@ export class Ball extends THREE.Object3D {
     this.btBody = MeshMaker.makeBody(this, ammo, shape, 0.5);
     this.btBody.setDamping(0.0, 0.9);
     this.btBody.setFriction(0.4);
-    this.add(new THREE.AxesHelper(100));
+
+    this.btBody.setCcdMotionThreshold(1e-1);
+    this.btBody.setCcdSweptSphereRadius(0.1);
+
+    // this.add(new THREE.AxesHelper(100));
   }
 
   private moveToTarget(

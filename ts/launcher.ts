@@ -12,7 +12,7 @@ export class Launcher extends THREE.Object3D {
       new THREE.MeshBasicMaterial({ color: '#f3e' })
     );
     this.body.geometry.translate(0, height / 2, 0);
-    this.body.rotateOnAxis(new THREE.Vector3(1, 0, 0), 0.5);
+    this.body.rotateOnAxis(new THREE.Vector3(1, 0, 0), 0.2);
     this.add(this.body);
   }
 

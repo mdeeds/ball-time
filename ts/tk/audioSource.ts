@@ -71,10 +71,10 @@ export class AudioSource extends THREE.Object3D {
     observer.worldToLocal(this.t);
     const r2 = this.t.lengthSq();
     const r = Math.sqrt(r2);
-    if (r < 0.01) {
-      return 20000;
+    if (r < 0.1) {
+      return 80000;
     }
-    const cosTheta = this.t.z / r;
+    const cosTheta = -this.t.z / r;
     const q = (cosTheta + 1.1) / (2.1);
     const m = 200.0 * q / r2;
     const ln20 = Math.log(20);

@@ -51,7 +51,9 @@ class Ball extends THREE.Object3D {
         this.btBody = meshMaker_1.MeshMaker.makeBody(this, ammo, shape, 0.5);
         this.btBody.setDamping(0.0, 0.9);
         this.btBody.setFriction(0.4);
-        this.add(new THREE.AxesHelper(100));
+        this.btBody.setCcdMotionThreshold(1e-1);
+        this.btBody.setCcdSweptSphereRadius(0.1);
+        // this.add(new THREE.AxesHelper(100));
     }
     moveToTarget(source, target, threePosition, threeQuaternion) {
         const iso = new THREE.Matrix4();
@@ -484,9 +486,6 @@ class Game {
         floorBtBody.setFriction(0.5);
         this.physicsWorld.addRigidBody(floorBtBody);
         this.rayCast();
-        const pillar = new THREE.Mesh(new THREE.CylinderGeometry(3.0, 0.0, 5.0, 64, 1, false), new THREE.MeshBasicMaterial({ color: 'green' }));
-        pillar.position.set(0, 4, 0);
-        this.universe.add(pillar);
     }
     zero = new THREE.Vector3(0, 0, 0);
     setUpBall() {
@@ -561,7 +560,7 @@ class Game {
             }
             else if (currentTimeS >= this.launchTimeS) {
                 this.launchTimeS = 0;
-                this.t1.set(0, 5 + Math.random() * 2, 0);
+                this.t1.set(0, 9 + Math.random() * 2, 0);
                 this.launcher.getBody().updateMatrixWorld();
                 this.nm.getNormalMatrix(this.launcher.getBody().matrixWorld);
                 this.t1.applyMatrix3(this.nm);
@@ -836,7 +835,7 @@ class Launcher extends THREE.Object3D {
         const height = 4.0;
         this.body = new THREE.Mesh(new THREE.CylinderGeometry(0.2, 0.1, height, 16, 3, false), new THREE.MeshBasicMaterial({ color: '#f3e' }));
         this.body.geometry.translate(0, height / 2, 0);
-        this.body.rotateOnAxis(new THREE.Vector3(1, 0, 0), 0.5);
+        this.body.rotateOnAxis(new THREE.Vector3(1, 0, 0), 0.2);
         this.add(this.body);
     }
     yAxis = new THREE.Vector3(0, 1, 0);
@@ -1137,16 +1136,17 @@ class AudioSource extends THREE.Object3D {
         observer.worldToLocal(this.t);
         const r2 = this.t.lengthSq();
         const r = Math.sqrt(r2);
-        if (r < 0.01) {
-            return 20000;
+        if (r < 0.1) {
+            return 80000;
         }
-        const cosTheta = this.t.z / r;
+        const cosTheta = -this.t.z / r;
         const q = (cosTheta + 1.1) / (2.1);
         const m = 200.0 * q / r2;
         const ln20 = Math.log(20);
         const ln20000 = Math.log(20000);
         const lnf = m * (ln20000 - ln20) + ln20;
-        return Math.exp(lnf);
+        const cutoff = Math.exp(lnf);
+        return cutoff > 80000 ? 80000 : cutoff;
     }
     oPosition = new THREE.Vector3();
     setFilter(o, f) {

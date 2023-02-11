@@ -97,15 +97,9 @@ export class Game {
     this.universe.add(this.floor);
     const floorBtBody = MeshMaker.makeStaticBody(this.floor, this.ammo);
     floorBtBody.setFriction(0.5);
+
     this.physicsWorld.addRigidBody(floorBtBody);
     this.rayCast();
-
-    const pillar = new THREE.Mesh(
-      new THREE.CylinderGeometry(3.0, 0.0, 5.0, 64, 1, false),
-      new THREE.MeshBasicMaterial({ color: 'green' })
-    );
-    pillar.position.set(0, 4, 0);
-    this.universe.add(pillar);
   }
 
   private zero = new THREE.Vector3(0, 0, 0);
@@ -186,7 +180,7 @@ export class Game {
         }
       } else if (currentTimeS >= this.launchTimeS) {
         this.launchTimeS = 0;
-        this.t1.set(0, 5 + Math.random() * 2, 0);
+        this.t1.set(0, 9 + Math.random() * 2, 0);
 
         this.launcher.getBody().updateMatrixWorld();
         this.nm.getNormalMatrix(this.launcher.getBody().matrixWorld)
