@@ -33,18 +33,39 @@ export class RenderTexture {
 
     this.material = new THREE.ShaderMaterial({
       vertexShader: `
-varying vec3 vWorldPosition;
+varying vec2 vUv;
 void main() {
-  vWorldPosition = position;
+  vUv = uv;
   gl_Position = projectionMatrix * modelViewMatrix * vec4( position, 1.0 );
-
 }`,
       fragmentShader: `
-varying vec3 vWorldPosition;
+#define PI 3.1415927
 
+vec2 TRfromUV(in vec2 uv) {
+  if (uv.x < 0.5) {
+   uv = (uv - vec2(0.25, 0.5)) * vec2(4.0, 2.0);
+   float rho = PI/2.0 * (1.0 - length(uv));
+   return vec2(atan(uv.y, uv.x), rho);
+  } else {
+   uv = (uv - vec2(0.75, 0.5)) * vec2(4.0, 2.0);
+   return vec2(PI - atan(uv.y, uv.x), -PI/2.0 * (1.0 - length(uv)));
+  }
+}
+
+vec3 S3fromTR(in vec2 tr) {
+  return vec3(
+    cos(tr.y) * cos(tr.x),
+    sin(tr.y),
+    cos(tr.y) * sin(tr.x));
+}
+
+varying vec2 vUv;
 void main() {
-  vec3 color = normalize(vWorldPosition) * 0.5 + 0.5;
-  gl_FragColor = vec4(color, 1.0 );
+  vec3 s3 = S3fromTR(TRfromUV(vUv));
+  vec3 color = normalize(s3) * 0.5 + 0.5;
+  vec3 dip = sin(s3 * 200.0);
+  float fdip = smoothstep(-2.0, 1.0, dip.x * dip.y * dip.z);
+  gl_FragColor = vec4(color * fdip, 1.0 );
 }`
     });
 
